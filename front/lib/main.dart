@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'commons.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,10 +13,8 @@ Future<void> main() async {
   if (supabaseUrl == null || supabaseAnonKey == null) {
     throw StateError('Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env');
   }
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  await initializeApp();
   runApp(const MyApp());
 }
 
@@ -25,9 +23,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Instruments',
-      home: HomePage(),
+    return MaterialApp(
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      navigatorKey: navigatorKey,
+
+      ///Screen names used from file screens.dart
+      initialRoute: Screens.profile,
+      routes: {Screens.profile: (_) => const ProfileScreen()},
     );
   }
 }
@@ -40,9 +43,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _future = Supabase.instance.client
-      .from('instruments')
-      .select();
+  final _future = Supabase.instance.client.from('instruments').select();
 
   @override
   Widget build(BuildContext context) {
@@ -58,9 +59,7 @@ class _HomePageState extends State<HomePage> {
             itemCount: instruments.length,
             itemBuilder: ((context, index) {
               final instrument = instruments[index];
-              return ListTile(
-                title: Text(instrument['name']),
-              );
+              return ListTile(title: Text(instrument['name']));
             }),
           );
         },
