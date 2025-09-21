@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:front/pages/account_page.dart';
+import 'package:front/pages/login_page.dart';
+import 'package:front/pages/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,50 +23,47 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+final supabase = Supabase.instance.client;
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Instruments',
-      home: HomePage(),
+    return MaterialApp(
+      title: 'TravelMate',
+      theme: ThemeData.dark().copyWith(
+        primaryColor: Colors.green,
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.green,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.green,
+          ),
+        ),
+      ),
+      home: const HomePage(),
+      routes: {
+        '/home': (context) => const HomePage(),
+        '/login': (context) => const LoginPage(),
+        '/account': (context) => const AccountPage(),
+      },
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final _future = Supabase.instance.client
-      .from('instruments')
-      .select();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder(
-        future: _future,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final instruments = snapshot.data!;
-          return ListView.builder(
-            itemCount: instruments.length,
-            itemBuilder: ((context, index) {
-              final instrument = instruments[index];
-              return ListTile(
-                title: Text(instrument['name']),
-              );
-            }),
-          );
-        },
+extension ContextExtension on BuildContext {
+  void showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(this).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Theme.of(this).colorScheme.error
+            : Theme.of(this).snackBarTheme.backgroundColor,
       ),
     );
   }
