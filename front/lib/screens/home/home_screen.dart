@@ -19,8 +19,12 @@ class _HomeScreenState extends HomeScreenController {
       body: FutureBuilder(
         future: _future,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+            return const Center(child: Text('No instruments found.'));
           }
           final instruments = snapshot.data!;
           log('Instruments: $instruments');
@@ -32,12 +36,6 @@ class _HomeScreenState extends HomeScreenController {
             }),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          log('Adding new instrument');
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
