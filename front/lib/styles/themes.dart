@@ -126,7 +126,7 @@ ThemeData get darkTheme {
           if (states.contains(WidgetState.disabled)) {
             return Colors.grey[800];
           }
-          return MyColors.trekBlue.withOpacity(0.8);
+          return MyColors.trekBlue.withValues(alpha: 0.8);
         }),
         foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
         overlayColor: WidgetStateProperty.all<Color>(Colors.grey[700]!),
@@ -151,7 +151,7 @@ ThemeData get darkTheme {
     ),
     switchTheme: SwitchThemeData(
       trackColor: WidgetStateProperty.all<Color>(
-        MyColors.trekBlue.withOpacity(0.8),
+        MyColors.trekBlue.withValues(alpha: 0.8),
       ),
     ),
   );
