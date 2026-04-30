@@ -17,6 +17,7 @@
 - Verifier le diff avant commit avec `git status` et `git diff --stat`.
 - Ne pas melanger refactor, changement visuel et correction de bug sans raison.
 - Ne pas committer de secrets, fichiers locaux, caches, builds ou changements generes inutiles.
+- Ne pas ajouter de trailer `Co-authored-by` pour Codex, OpenAI ou un assistant IA.
 - Pull ou merge `main` avant de pousser une branche qui a dure plus qu'une petite session.
 - Apres push, ouvrir une PR avec les validations executees et les risques restants.
 
