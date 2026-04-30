@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/pages/login_page.dart';
-import 'package:front/pages/account_page.dart';
+import 'package:front/screens/account/account_page.dart';
+import 'package:front/screens/login/login_page.dart';
 import 'package:front/theme/crazer_theme.dart';
 
 class HomePage extends StatelessWidget {
@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-                'lib/assets/Crazer_LOGO.png',
+                'assets/images/Crazer_LOGO.png',
                 height: 120,
                 fit: BoxFit.contain,
               ),

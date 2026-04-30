@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/pages/account_page.dart';
+import 'package:front/screens/account/account_page.dart';
 import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -178,7 +178,7 @@ class _CrazerLoginHeader extends StatelessWidget {
     return Column(
       children: [
         Image.asset(
-          'lib/assets/Crazer_LOGO.png',
+          'assets/images/Crazer_LOGO.png',
           height: 96,
           fit: BoxFit.contain,
         ),
