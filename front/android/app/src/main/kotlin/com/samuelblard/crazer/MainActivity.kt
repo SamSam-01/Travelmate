@@ -1,4 +1,4 @@
-package com.example.front
+package com.samuelblard.crazer
 
 import io.flutter.embedding.android.FlutterActivity
 
