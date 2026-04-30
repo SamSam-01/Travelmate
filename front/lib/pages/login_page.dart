@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/pages/account_page.dart';
+import 'package:front/pages/home_page.dart';
 import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -102,8 +102,9 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted || _redirecting || data.session == null) return;
 
     _redirecting = true;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AccountPage()),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const HomePage()),
+      (_) => false,
     );
   }
 

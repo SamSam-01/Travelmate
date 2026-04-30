@@ -14,11 +14,22 @@ void main() {
     );
   });
 
-  testWidgets('CRAZER home page smoke test', (WidgetTester tester) async {
+  testWidgets('CRAZER welcome page smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
     expect(find.text('CRAZER'), findsOneWidget);
     expect(find.text('Explorer sans compte'), findsOneWidget);
     expect(find.text('Se connecter'), findsOneWidget);
+  });
+
+  testWidgets('guest exploration opens the map page', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('Explorer sans compte'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Token Mapbox manquant'), findsOneWidget);
   });
 }

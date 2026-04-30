@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:front/pages/account_page.dart';
-import 'package:front/pages/login_page.dart';
 import 'package:front/pages/home_page.dart';
+import 'package:front/pages/login_page.dart';
+import 'package:front/pages/welcome_page.dart';
 import 'package:front/theme/crazer_theme.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+const mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (mapboxAccessToken.isNotEmpty) {
+    MapboxOptions.setAccessToken(mapboxAccessToken);
+  }
 
   if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
     runApp(const CrazerConfigErrorApp());
@@ -30,8 +37,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'CRAZER',
       theme: CrazerTheme.dark(),
-      home: const HomePage(),
+      home: supabase.auth.currentSession == null
+          ? const WelcomePage()
+          : const HomePage(),
       routes: {
+        '/welcome': (context) => const WelcomePage(),
         '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
         '/account': (context) => const AccountPage(),
