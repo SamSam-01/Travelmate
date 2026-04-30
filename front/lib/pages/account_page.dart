@@ -14,22 +14,29 @@ class _AccountPageState extends State<AccountPage> {
   final _usernameController = TextEditingController();
   final _websiteController = TextEditingController();
 
-  String? _avatarUrl;
   var _loading = true;
 
   /// Called once a user id is received within `onAuthenticated()`
   Future<void> _getProfile() async {
+    final session = supabase.auth.currentSession;
+    if (session == null) {
+      _redirectToLogin();
+      return;
+    }
+
     setState(() {
       _loading = true;
     });
 
     try {
-      final userId = supabase.auth.currentSession!.user.id;
-      final data =
-          await supabase.from('profiles').select().eq('id', userId).single();
+      final userId = session.user.id;
+      final data = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
       _usernameController.text = (data['username'] ?? '') as String;
       _websiteController.text = (data['website'] ?? '') as String;
-      _avatarUrl = (data['avatar_url'] ?? '') as String;
     } on PostgrestException catch (error) {
       if (mounted) context.showSnackBar(error.message, isError: true);
     } catch (error) {
@@ -47,14 +54,19 @@ class _AccountPageState extends State<AccountPage> {
 
   /// Called when user taps `Update` button
   Future<void> _updateProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      _redirectToLogin();
+      return;
+    }
+
     setState(() {
       _loading = true;
     });
     final userName = _usernameController.text.trim();
     final website = _websiteController.text.trim();
-    final user = supabase.auth.currentUser;
     final updates = {
-      'id': user!.id,
+      'id': user.id,
       'username': userName,
       'website': website,
       'updated_at': DateTime.now().toIso8601String(),
@@ -77,6 +89,15 @@ class _AccountPageState extends State<AccountPage> {
     }
   }
 
+  void _redirectToLogin() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+    });
+  }
+
   Future<void> _signOut() async {
     try {
       await supabase.auth.signOut();
@@ -88,9 +109,9 @@ class _AccountPageState extends State<AccountPage> {
       }
     } finally {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
       }
     }
   }
