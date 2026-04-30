@@ -191,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Main button (Login / Create account)
                 ElevatedButton(
                   onPressed: _isLoading ? null : (_isSignUp ? _signUp : _signIn),
