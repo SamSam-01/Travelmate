@@ -38,7 +38,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     try {
       await supabase.auth.updateUser(
-        UserAttributes(password: _passwordController.text.trim()),
+        UserAttributes(password: _passwordController.text),
       );
       if (!mounted) return;
 
@@ -58,16 +58,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   String? _validatePassword(String? value) {
-    final password = value?.trim() ?? '';
+    final password = value ?? '';
     if (password.isEmpty) return 'Renseignez votre nouveau mot de passe';
     if (password.length < 6) return '6 caracteres minimum';
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
-    final confirmation = value?.trim() ?? '';
+    final confirmation = value ?? '';
     if (confirmation.isEmpty) return 'Confirmez votre nouveau mot de passe';
-    if (confirmation != _passwordController.text.trim()) {
+    if (confirmation != _passwordController.text) {
       return 'Les mots de passe ne correspondent pas';
     }
 
