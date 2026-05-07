@@ -29,7 +29,17 @@ Future<void> initializeApp() async {
   }
 
   if (mapboxAccessToken.isNotEmpty) {
-    MapboxOptions.setAccessToken(mapboxAccessToken);
+    // Some platforms (desktop) may not register the Mapbox plugin implementation,
+    // causing a missing channel handler error. Guard this call so the app
+    // doesn't crash when the plugin isn't available (e.g. Linux desktop).
+    try {
+      MapboxOptions.setAccessToken(mapboxAccessToken);
+    } catch (e, st) {
+      // Avoid crashing the app if the platform doesn't support Mapbox plugin.
+      // Log for debugging purposes.
+      // ignore: avoid_print
+      print('Mapbox setAccessToken failed: $e\n$st');
+    }
   }
 
   await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);

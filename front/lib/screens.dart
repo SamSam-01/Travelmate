@@ -3,6 +3,7 @@
 ///doesn't use Navigator 2.0 or go_router.
 library;
 
+export 'package:front/screens/outings/outings_screen.dart';
 export 'package:front/screens/profile/profile_screen.dart';
 
 class Screens {
@@ -11,5 +12,6 @@ class Screens {
   static const welcome = '/welcome';
   static const login = '/login';
   static const profile = '/profile';
+  static const outings = '/outings';
   static const home = '/home';
 }

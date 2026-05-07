@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
       routes: {
         Screens.home: (_) => const HomePage(),
         Screens.login: (_) => const LoginPage(),
+        Screens.outings: (_) => const OutingsScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == Screens.app || settings.name == Screens.profile) {

@@ -4,9 +4,10 @@ import 'package:front/presentation/pages/friends_page.dart';
 import 'package:front/screens/account/account_page.dart';
 import 'package:front/screens/home/home_screen.dart';
 import 'package:front/screens/maps/maps_screen.dart';
-import 'package:front/theme/crazer_theme.dart';
+import 'package:front/screens/outings/outings_screen.dart';
+import 'package:front/styles/colors.dart';
 
-enum AppShellTab { home, maps, friends, profile }
+enum AppShellTab { home, maps, outings, friends, profile }
 
 class AuthenticatedAppShell extends StatefulWidget {
   const AuthenticatedAppShell({
@@ -40,6 +41,12 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
       builder: (_) => const MapsScreen(),
     ),
     _AppTabItem(
+      tab: AppShellTab.outings,
+      icon: Icons.event_note_outlined,
+      selectedIcon: Icons.event,
+      builder: (_) => const OutingsScreen(),
+    ),
+    _AppTabItem(
       tab: AppShellTab.friends,
       icon: Icons.people_outline,
       selectedIcon: Icons.people,
@@ -70,6 +77,7 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
     final labels = <AppShellTab, String>{
       AppShellTab.home: localizations.navigationHome,
       AppShellTab.maps: localizations.navigationMaps,
+      AppShellTab.outings: 'Sorties',
       AppShellTab.friends: localizations.navigationFriends,
       AppShellTab.profile: localizations.navigationProfile,
     };

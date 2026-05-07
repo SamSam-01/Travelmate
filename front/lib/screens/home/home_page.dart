@@ -3,6 +3,7 @@ import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
 import 'package:front/screens/app/authenticated_app_shell.dart';
+import 'package:front/styles/colors.dart';
 import 'package:front/theme/crazer_theme.dart';
 
 class HomePage extends StatelessWidget {
