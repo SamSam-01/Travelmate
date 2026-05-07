@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/home/home_page.dart';
+import 'package:front/screens/account/account_page.dart';
 import 'package:front/screens/login/login_page.dart';
 import 'package:front/theme/crazer_theme.dart';
 
-class WelcomePage extends StatelessWidget {
-  const WelcomePage({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hasSession = supabase.auth.currentSession != null;
-
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -42,27 +40,39 @@ class WelcomePage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 64),
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const HomePage()),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Fonctionnalité d\'exploration à venir !'),
+                    ),
                   );
                 },
-                icon: const Icon(Icons.explore_outlined),
-                label: const Text(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
                   'Explorer sans compte',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
+              OutlinedButton(
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const LoginPage()),
                   );
                 },
-                icon: const Icon(Icons.login_outlined),
-                label: Text(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
                   'Se connecter',
                   style: TextStyle(
                     fontSize: 16,
@@ -72,17 +82,21 @@ class WelcomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              if (hasSession)
-                TextButton.icon(
+              if (supabase.auth.currentSession != null)
+                TextButton(
                   onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => const HomePage()),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AccountPage(),
+                      ),
                     );
                   },
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text('Continuer vers la carte'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: CrazerColors.lime,
+                  child: Text(
+                    'Accéder à mon compte',
+                    style: TextStyle(
+                      color: CrazerColors.lime,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
             ],
