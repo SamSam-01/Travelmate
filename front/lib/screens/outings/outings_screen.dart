@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:front/commons.dart';
+import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
 import 'package:front/main.dart';
+import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/services/user_service.dart';
 import 'package:front/utils/planned_outings_helper.dart';
@@ -16,6 +18,7 @@ class OutingsScreen extends StatefulWidget {
 }
 
 class _OutingsScreenState extends State<OutingsScreen> {
+  final _activityService = const ActivityService();
   final _plannedOutingService = const PlannedOutingService();
   final _userService = const UserService();
 
@@ -31,8 +34,11 @@ class _OutingsScreenState extends State<OutingsScreen> {
     try {
       final currentUserId = supabase.auth.currentUser?.id;
       final results = await Future.wait([
-        _plannedOutingService.fetchPlannedOutings(),
+        _plannedOutingService.fetchPlannedOutings(
+          currentUserId: currentUserId ?? '',
+        ),
         _userService.fetchUsers(),
+        _activityService.fetchActivities(),
       ]);
 
       final outings = filterPlannedOutingsForUser(
@@ -43,6 +49,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
       return _OutingsData(
         outings: outings,
         users: results[1] as List<PlannedOutingUser>,
+        activities: results[2] as List<Activity>,
       );
     } on PostgrestException catch (error) {
       throw _OutingsLoadException(error.message);
@@ -75,7 +82,10 @@ class _OutingsScreenState extends State<OutingsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => _PlannedOutingFormSheet(users: data.users),
+      builder: (context) => _PlannedOutingFormSheet(
+        users: data.users,
+        activities: data.activities,
+      ),
     );
 
     if (!mounted || createdOuting == null) {
@@ -138,7 +148,8 @@ class _OutingsScreenState extends State<OutingsScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: data.users.isEmpty
+                        onPressed:
+                            (data.users.isEmpty || data.activities.isEmpty)
                             ? null
                             : () => _openCreateSheet(data),
                         icon: const Icon(Icons.add),
@@ -151,6 +162,8 @@ class _OutingsScreenState extends State<OutingsScreen> {
                     const SizedBox(height: 16),
                     if (data.users.isEmpty)
                       _EmptyUsersHint(onRetry: _refresh)
+                    else if (data.activities.isEmpty)
+                      _EmptyActivitiesHint(onRetry: _refresh)
                     else if (outings.isEmpty)
                       _EmptyOutingsState(onCreate: () => _openCreateSheet(data))
                     else
@@ -405,6 +418,50 @@ class _EmptyUsersHint extends StatelessWidget {
   }
 }
 
+class _EmptyActivitiesHint extends StatelessWidget {
+  const _EmptyActivitiesHint({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 48),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.event_note_outlined, size: 56, color: scheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune activité disponible',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'La table activities doit contenir au moins une activité pour créer une sortie liée.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Rafraîchir'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _OutingsError extends StatelessWidget {
   const _OutingsError({required this.message, required this.onRetry});
 
@@ -452,10 +509,12 @@ class _OutingsData {
   const _OutingsData({
     this.outings = const <PlannedOuting>[],
     this.users = const <PlannedOutingUser>[],
+    this.activities = const <Activity>[],
   });
 
   final List<PlannedOuting> outings;
   final List<PlannedOutingUser> users;
+  final List<Activity> activities;
 }
 
 class _OutingsLoadException implements Exception {
@@ -468,9 +527,13 @@ class _OutingsLoadException implements Exception {
 }
 
 class _PlannedOutingFormSheet extends StatefulWidget {
-  const _PlannedOutingFormSheet({required this.users});
+  const _PlannedOutingFormSheet({
+    required this.users,
+    required this.activities,
+  });
 
   final List<PlannedOutingUser> users;
+  final List<Activity> activities;
 
   @override
   State<_PlannedOutingFormSheet> createState() =>
@@ -534,13 +597,17 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
         .toList(growable: false);
     final activities = _activityDrafts
         .map(
-          (draft) => PlannedOutingActivity(
-            title: draft.titleController.text.trim(),
-            time: draft.timeController.text.trim(),
-          ),
+          (draft) => draft.selectedActivity == null
+              ? null
+              : PlannedOutingActivity.fromActivity(
+                  draft.selectedActivity!,
+                  time: draft.timeController.text.trim(),
+                ),
         )
+        .whereType<PlannedOutingActivity>()
         .where(
-          (activity) => activity.title.isNotEmpty && activity.time.isNotEmpty,
+          (activity) =>
+              activity.activityId.isNotEmpty && activity.time.isNotEmpty,
         )
         .toList(growable: false);
 
@@ -676,7 +743,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
             Row(
               children: [
                 Text(
-                  'Activités avec heure',
+                  'Activités liées',
                   style: Theme.of(
                     context,
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -690,17 +757,29 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
               ],
             ),
             const SizedBox(height: 8),
-            for (var index = 0; index < _activityDrafts.length; index++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _ActivityDraftRow(
-                  draft: _activityDrafts[index],
-                  index: index + 1,
-                  canRemove: _activityDrafts.length > 1,
-                  onPickTime: () => _pickTime(index),
-                  onRemove: () => _removeActivity(index),
+            if (widget.activities.isEmpty)
+              Text(
+                'Aucune activité disponible pour le moment.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              )
+            else
+              for (var index = 0; index < _activityDrafts.length; index++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _ActivityDraftRow(
+                    activities: widget.activities,
+                    draft: _activityDrafts[index],
+                    index: index + 1,
+                    canRemove: _activityDrafts.length > 1,
+                    onSelectActivity: (activity) {
+                      setState(() {
+                        _activityDrafts[index].selectedActivity = activity;
+                      });
+                    },
+                    onPickTime: () => _pickTime(index),
+                    onRemove: () => _removeActivity(index),
+                  ),
                 ),
-              ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -720,27 +799,30 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
 class _ActivityDraft {
   _ActivityDraft();
 
-  final TextEditingController titleController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
+  Activity? selectedActivity;
 
   void dispose() {
-    titleController.dispose();
     timeController.dispose();
   }
 }
 
 class _ActivityDraftRow extends StatelessWidget {
   const _ActivityDraftRow({
+    required this.activities,
     required this.draft,
     required this.index,
     required this.canRemove,
+    required this.onSelectActivity,
     required this.onPickTime,
     required this.onRemove,
   });
 
+  final List<Activity> activities;
   final _ActivityDraft draft;
   final int index;
   final bool canRemove;
+  final ValueChanged<Activity?> onSelectActivity;
   final VoidCallback onPickTime;
   final VoidCallback onRemove;
 
@@ -768,11 +850,31 @@ class _ActivityDraftRow extends StatelessWidget {
                   ),
               ],
             ),
-            TextField(
-              controller: draft.titleController,
+            DropdownButtonFormField<Activity>(
+              value: draft.selectedActivity,
+              items: activities
+                  .map(
+                    (activity) => DropdownMenuItem<Activity>(
+                      value: activity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(activity.title),
+                          if (activity.subtitle.isNotEmpty)
+                            Text(
+                              activity.subtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: onSelectActivity,
               decoration: const InputDecoration(
-                labelText: 'Nom de l’activité',
-                hintText: 'Ex. Déjeuner au bord de mer',
+                labelText: 'Activité',
+                hintText: 'Choisir une activité liée',
               ),
             ),
             const SizedBox(height: 12),

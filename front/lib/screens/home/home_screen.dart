@@ -33,7 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final currentUserId = supabase.auth.currentUser?.id;
       final results = await Future.wait([
         _activityService.fetchActivities(),
-        _plannedOutingService.fetchPlannedOutings(),
+        _plannedOutingService.fetchPlannedOutings(
+          currentUserId: currentUserId ?? '',
+        ),
       ]);
 
       return _HomeData(

@@ -97,7 +97,7 @@ void main() {
             sortOrder: 2,
           ),
         ],
-      userId: 'u1',
+        userId: 'u1',
       );
 
       expect(items, hasLength(1));

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front/models/activity_model.dart';
 import 'package:front/widgets/home_carousel.dart';
 
 class PlannedOutingUser {
@@ -27,10 +28,37 @@ class PlannedOutingUser {
 }
 
 class PlannedOutingActivity {
-  const PlannedOutingActivity({required this.title, required this.time});
+  const PlannedOutingActivity({
+    required this.title,
+    required this.time,
+    this.activityId = '',
+    this.subtitle = '',
+    this.badge = '',
+    this.tone = HomeCarouselTone.planned,
+    this.icon = Icons.event_available_outlined,
+  });
+
+  const PlannedOutingActivity.fromActivity(
+    Activity activity, {
+    required String time,
+  }) : this(
+         activityId: activity.id,
+         title: activity.title,
+         time: time,
+         subtitle: activity.subtitle,
+         badge: activity.badge,
+         tone: activity.tone,
+         icon: activity.icon,
+       );
+
+  final String activityId;
 
   final String title;
   final String time;
+  final String subtitle;
+  final String badge;
+  final HomeCarouselTone tone;
+  final IconData icon;
 
   factory PlannedOutingActivity.fromJson(dynamic json) {
     if (json is String) {
@@ -38,18 +66,64 @@ class PlannedOutingActivity {
     }
 
     if (json is Map<String, dynamic>) {
+      final nestedActivity = json['activity'];
+      if (nestedActivity is Map<String, dynamic>) {
+        final activity = Activity.fromJson(nestedActivity);
+        return PlannedOutingActivity.fromActivity(
+          activity,
+          time: (json['time'] ?? json['hour'] ?? json['starts_at'] ?? '')
+              .toString(),
+        );
+      }
+
       return PlannedOutingActivity(
+        activityId: (json['activity_id'] ?? json['id'] ?? '').toString(),
         title: (json['title'] ?? json['name'] ?? json['label'] ?? '')
             .toString(),
         time: (json['time'] ?? json['hour'] ?? json['starts_at'] ?? '')
             .toString(),
+        subtitle: (json['subtitle'] ?? '').toString(),
+        badge: (json['badge'] ?? '').toString(),
+        tone: _toneFromValue(json['tone']),
+        icon: _iconFromValue(json['icon_key'] ?? json['icon']),
       );
     }
 
     return PlannedOutingActivity(title: json?.toString() ?? '', time: '');
   }
 
-  Map<String, dynamic> toJson() => {'title': title, 'time': time};
+  Map<String, dynamic> toJson() => {'activity_id': activityId, 'time': time};
+
+  static HomeCarouselTone _toneFromValue(dynamic value) {
+    final normalized = value?.toString().trim().toLowerCase();
+    return switch (normalized) {
+      'nature' => HomeCarouselTone.nature,
+      'city' => HomeCarouselTone.city,
+      'food' => HomeCarouselTone.food,
+      'culture' => HomeCarouselTone.culture,
+      'planned' => HomeCarouselTone.planned,
+      'hiking' => HomeCarouselTone.hiking,
+      'dinner' => HomeCarouselTone.dinner,
+      'water' => HomeCarouselTone.water,
+      _ => HomeCarouselTone.planned,
+    };
+  }
+
+  static IconData _iconFromValue(dynamic value) {
+    final normalized = value?.toString().trim().toLowerCase();
+
+    return switch (normalized) {
+      'terrain_outlined' => Icons.terrain_outlined,
+      'location_city_outlined' => Icons.location_city_outlined,
+      'restaurant_outlined' => Icons.restaurant_outlined,
+      'museum_outlined' => Icons.museum_outlined,
+      'hiking_outlined' => Icons.hiking_outlined,
+      'event_available_outlined' => Icons.event_available_outlined,
+      'dinner_dining_outlined' => Icons.dinner_dining_outlined,
+      'water_outlined' => Icons.water_outlined,
+      _ => Icons.event_available_outlined,
+    };
+  }
 }
 
 class PlannedOuting {
@@ -108,13 +182,7 @@ class PlannedOuting {
     return users.any((user) => user.id == normalizedUserId);
   }
 
-  Map<String, dynamic> toInsertJson() => {
-    'title': title,
-    'users': users.map((user) => user.toJson()).toList(growable: false),
-    'activities': activities
-        .map((activity) => activity.toJson())
-        .toList(growable: false),
-  };
+  Map<String, dynamic> toInsertJson() => {'title': title};
 
   HomeCarouselItem toCarouselItem() {
     final participantsLabel = users.isEmpty
