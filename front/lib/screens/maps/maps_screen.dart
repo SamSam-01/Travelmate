@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:front/commons.dart';
 import 'package:front/l10n/app_localizations.dart';
-import 'package:front/theme/crazer_theme.dart';
+import 'package:front/styles/colors.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapsScreen extends StatefulWidget {
