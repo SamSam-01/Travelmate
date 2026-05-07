@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/screens.dart';
+import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/theme/crazer_theme.dart';
 
 class HomePage extends StatelessWidget {
@@ -13,6 +14,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasSession =
         hasSessionOverride ?? supabase.auth.currentSession != null;
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -38,7 +40,7 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Votre compagnon de voyage idéal',
+                localizations.homeTagline,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: CrazerColors.textSecondary,
                 ),
@@ -48,9 +50,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Fonctionnalité d\'exploration à venir !'),
-                    ),
+                    SnackBar(content: Text(localizations.featureComingSoon)),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -59,8 +59,8 @@ class HomePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Explorer sans compte',
+                child: Text(
+                  localizations.exploreWithoutAccount,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -76,7 +76,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Se connecter',
+                  localizations.signIn,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -93,7 +93,7 @@ class HomePage extends StatelessWidget {
                     ).pushNamed(Screens.app, arguments: AppShellTab.profile);
                   },
                   child: Text(
-                    'Accéder à mon compte',
+                    localizations.goToAccount,
                     style: TextStyle(
                       color: CrazerColors.lime,
                       fontWeight: FontWeight.w500,

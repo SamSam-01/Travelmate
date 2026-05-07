@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -42,7 +43,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       );
       if (!mounted) return;
 
-      context.showSnackBar('Mot de passe mis a jour avec succes.');
+      context.showSnackBar(AppLocalizations.of(context)!.resetPasswordSuccess);
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
     } on AuthException catch (error) {
       if (mounted) context.showSnackBar(error.message, isError: true);
@@ -58,17 +59,23 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   String? _validatePassword(String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final password = value ?? '';
-    if (password.isEmpty) return 'Renseignez votre nouveau mot de passe';
-    if (password.length < 6) return '6 caracteres minimum';
+    if (password.isEmpty) {
+      return localizations.validationNewPasswordRequired;
+    }
+    if (password.length < 6) return localizations.loginPasswordTooShort;
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final confirmation = value ?? '';
-    if (confirmation.isEmpty) return 'Confirmez votre nouveau mot de passe';
+    if (confirmation.isEmpty) {
+      return localizations.validationConfirmPasswordRequired;
+    }
     if (confirmation != _passwordController.text) {
-      return 'Les mots de passe ne correspondent pas';
+      return localizations.validationPasswordsDoNotMatch;
     }
 
     return null;
@@ -76,13 +83,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         centerTitle: true,
-        title: const Text(
-          'Nouveau mot de passe',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        title: Text(
+          localizations.resetPasswordTitle,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -100,13 +109,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Choisissez un nouveau mot de passe',
+                  localizations.resetPasswordHeadline,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Une fois valide, votre mot de passe sera mis a jour immediatement.',
+                  localizations.resetPasswordDescription,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
@@ -119,9 +128,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         controller: _passwordController,
                         obscureText: true,
                         autofillHints: const [AutofillHints.newPassword],
-                        decoration: const InputDecoration(
-                          labelText: 'Nouveau mot de passe',
-                          prefixIcon: Icon(Icons.lock_outlined),
+                        decoration: InputDecoration(
+                          labelText: localizations.resetPasswordField,
+                          prefixIcon: const Icon(Icons.lock_outlined),
                         ),
                         validator: _validatePassword,
                       ),
@@ -130,9 +139,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         controller: _confirmPasswordController,
                         obscureText: true,
                         autofillHints: const [AutofillHints.newPassword],
-                        decoration: const InputDecoration(
-                          labelText: 'Confirmer le mot de passe',
-                          prefixIcon: Icon(Icons.verified_user_outlined),
+                        decoration: InputDecoration(
+                          labelText: localizations.resetPasswordConfirmField,
+                          prefixIcon: const Icon(Icons.verified_user_outlined),
                         ),
                         validator: _validateConfirmPassword,
                         onFieldSubmitted: (_) => _submit(),
@@ -151,8 +160,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text(
-                            'Mettre a jour le mot de passe',
+                        : Text(
+                            localizations.resetPasswordSubmit,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -169,9 +178,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             context,
                           ).pushNamedAndRemoveUntil('/login', (_) => false);
                         },
-                  child: const Text(
-                    'Retour a la connexion',
-                    style: TextStyle(
+                  child: Text(
+                    localizations.resetPasswordBackToLogin,
+                    style: const TextStyle(
                       color: CrazerColors.lime,
                       fontWeight: FontWeight.w600,
                     ),

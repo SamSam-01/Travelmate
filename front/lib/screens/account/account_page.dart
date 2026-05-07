@@ -1,104 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:front/data/models/profile_model.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
+import 'package:front/presentation/providers/friendship_providers.dart';
 import 'package:front/screens.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AccountPage extends StatefulWidget {
+class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key, this.requireSession = true});
 
   final bool requireSession;
 
   @override
-  State<AccountPage> createState() => _AccountPageState();
+  ConsumerState<AccountPage> createState() => _AccountPageState();
 }
 
-class _AccountPageState extends State<AccountPage> {
+class _AccountPageState extends ConsumerState<AccountPage> {
   final _usernameController = TextEditingController();
-  final _websiteController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _avatarUrlController = TextEditingController();
 
-  var _loading = true;
+  bool _isPrivate = true;
+  String? _lastProfileSignature;
 
-  /// Called once a user id is received within `onAuthenticated()`
-  Future<void> _getProfile() async {
-    final session = supabase.auth.currentSession;
-    if (session == null) {
-      if (widget.requireSession) {
-        _redirectToLogin();
-      } else {
-        setState(() {
-          _loading = false;
-        });
-      }
-      return;
-    }
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _displayNameController.dispose();
+    _avatarUrlController.dispose();
+    super.dispose();
+  }
 
-    setState(() {
-      _loading = true;
-    });
+  Future<void> _updateProfile(ProfileModel profile) async {
+    final localizations = AppLocalizations.of(context)!;
 
     try {
-      final userId = session.user.id;
-      final data = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-      _usernameController.text = (data['username'] ?? '') as String;
-      _websiteController.text = (data['website'] ?? '') as String;
-    } on PostgrestException catch (error) {
-      if (mounted) context.showSnackBar(error.message, isError: true);
+      final updatedProfile = await ref
+          .read(currentUserProfileProvider.notifier)
+          .updateProfile(
+            profile.copyWith(
+              username: _usernameController.text.trim().toLowerCase(),
+              displayName: _displayNameController.text.trim().isEmpty
+                  ? null
+                  : _displayNameController.text.trim(),
+              avatarUrl: _avatarUrlController.text.trim().isEmpty
+                  ? null
+                  : _avatarUrlController.text.trim(),
+              isPrivate: _isPrivate,
+            ),
+          );
+
+      _applyProfile(updatedProfile);
+      if (!mounted) {
+        return;
+      }
+      context.showSnackBar(localizations.profileUpdatedSuccess);
     } catch (error) {
-      if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
+      if (!mounted) {
+        return;
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      context.showSnackBar(error.toString(), isError: true);
     }
   }
 
-  /// Called when user taps `Update` button
-  Future<void> _updateProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      if (widget.requireSession) {
-        _redirectToLogin();
-      } else if (mounted) {
-        context.showSnackBar('Connexion requise', isError: true);
-      }
+  void _applyProfile(ProfileModel profile) {
+    _usernameController.text = profile.username;
+    _displayNameController.text = profile.displayName ?? '';
+    _avatarUrlController.text = profile.avatarUrl ?? '';
+    _isPrivate = profile.isPrivate;
+  }
+
+  void _syncProfile(ProfileModel profile) {
+    final signature = [
+      profile.id,
+      profile.username,
+      profile.displayName ?? '',
+      profile.avatarUrl ?? '',
+      profile.isPrivate.toString(),
+    ].join('|');
+
+    if (signature == _lastProfileSignature) {
       return;
     }
 
-    setState(() {
-      _loading = true;
-    });
-    final userName = _usernameController.text.trim();
-    final website = _websiteController.text.trim();
-    final updates = {
-      'id': user.id,
-      'username': userName,
-      'website': website,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-    try {
-      await supabase.from('profiles').upsert(updates);
-      if (mounted) context.showSnackBar('Successfully updated profile!');
-    } on PostgrestException catch (error) {
-      if (mounted) context.showSnackBar(error.message, isError: true);
-    } catch (error) {
-      if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
+    _applyProfile(profile);
+    _lastProfileSignature = signature;
   }
 
   void _redirectToLogin() {
@@ -116,9 +103,12 @@ class _AccountPageState extends State<AccountPage> {
       await supabase.auth.signOut();
     } on AuthException catch (error) {
       if (mounted) context.showSnackBar(error.message, isError: true);
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
+        context.showSnackBar(
+          AppLocalizations.of(context)!.loginUnexpectedError,
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -131,42 +121,77 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _getProfile();
-  }
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _websiteController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final session = supabase.auth.currentSession;
+
+    if (session == null) {
+      if (widget.requireSession) {
+        _redirectToLogin();
+      }
+      return Scaffold(
+        appBar: AppBar(title: Text(localizations.profileTitle)),
+        body: Center(child: Text(localizations.profileLoginRequired)),
+      );
+    }
+
+    final profileAsync = ref.watch(currentUserProfileProvider);
+    final isSaving = profileAsync.isLoading;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        children: [
-          TextFormField(
-            controller: _usernameController,
-            decoration: const InputDecoration(labelText: 'User Name'),
-          ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _websiteController,
-            decoration: const InputDecoration(labelText: 'Website'),
-          ),
-          const SizedBox(height: 18),
-          ElevatedButton(
-            onPressed: _loading ? null : _updateProfile,
-            child: Text(_loading ? 'Saving...' : 'Update'),
-          ),
-          const SizedBox(height: 18),
-          TextButton(onPressed: _signOut, child: const Text('Sign Out')),
-        ],
+      appBar: AppBar(title: Text(localizations.profileTitle)),
+      body: profileAsync.when(
+        data: (profile) {
+          _syncProfile(profile);
+
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+            children: [
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: localizations.profileUsername,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextFormField(
+                controller: _displayNameController,
+                decoration: InputDecoration(
+                  labelText: localizations.profileDisplayName,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextFormField(
+                controller: _avatarUrlController,
+                decoration: InputDecoration(
+                  labelText: localizations.profileAvatarUrl,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SwitchListTile(
+                value: _isPrivate,
+                onChanged: (value) => setState(() => _isPrivate = value),
+                title: Text(localizations.profilePrivate),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: isSaving ? null : () => _updateProfile(profile),
+                child: Text(
+                  isSaving
+                      ? localizations.profileSaving
+                      : localizations.profileUpdate,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextButton(
+                onPressed: _signOut,
+                child: Text(localizations.profileSignOut),
+              ),
+            ],
+          );
+        },
+        error: (error, _) => Center(child: Text(error.toString())),
+        loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
   }
