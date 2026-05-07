@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'CRAZER',
       theme: lightTheme,
       darkTheme: darkTheme,
+      themeMode: ThemeMode.dark,
       navigatorKey: navigatorKey,
       initialRoute: Screens.home,
       routes: {

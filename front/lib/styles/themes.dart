@@ -5,6 +5,37 @@ ThemeData get lightTheme {
     fontFamily: Font.montserrat,
     primarySwatch: Colors.blue,
     useMaterial3: true,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: MyColors.paleGrey,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      labelStyle: const TextStyle(
+        color: MyColors.greyDark,
+        fontWeight: FontWeight.w500,
+      ),
+      hintStyle: const TextStyle(color: MyColors.greyDark),
+      prefixIconColor: MyColors.trekBlue,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.greyLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.greyLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.trekBlue, width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.red, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.red, width: 1.4),
+      ),
+    ),
     cardTheme: const CardThemeData(
       elevation: 8,
       shape: RoundedRectangleBorder(
@@ -84,6 +115,37 @@ ThemeData get darkTheme {
     primarySwatch: Colors.blue,
     useMaterial3: true,
     brightness: Brightness.dark,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: MyColors.blackAlt,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      labelStyle: const TextStyle(
+        color: MyColors.appbarIconGrey,
+        fontWeight: FontWeight.w500,
+      ),
+      hintStyle: const TextStyle(color: MyColors.appbarIconGrey),
+      prefixIconColor: MyColors.trekBlueLight,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.greyDark),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.greyDark),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.trekBlueLight, width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.red, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: MyColors.red, width: 1.4),
+      ),
+    ),
     cardTheme: const CardThemeData(
       elevation: 8,
       shape: RoundedRectangleBorder(
