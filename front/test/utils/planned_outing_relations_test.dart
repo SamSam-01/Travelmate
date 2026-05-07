@@ -10,7 +10,7 @@ void main() {
     'should build outings from foreign key relations and filter by user',
     () {
       final outings = buildPlannedOutingsFromRelations(
-        outingRows: const [
+        outingRows: const <Map<String, dynamic>>[
           {
             'id': 'outing-1',
             'title': 'Sortie FK A',

@@ -38,18 +38,16 @@ class PlannedOutingActivity {
     this.icon = Icons.event_available_outlined,
   });
 
-  const PlannedOutingActivity.fromActivity(
-    Activity activity, {
-    required String time,
-  }) : this(
-         activityId: activity.id,
-         title: activity.title,
-         time: time,
-         subtitle: activity.subtitle,
-         badge: activity.badge,
-         tone: activity.tone,
-         icon: activity.icon,
-       );
+  PlannedOutingActivity.fromActivity(Activity activity, {required String time})
+    : this(
+        activityId: activity.id,
+        title: activity.title,
+        time: time,
+        subtitle: activity.subtitle,
+        badge: activity.badge,
+        tone: activity.tone,
+        icon: activity.icon,
+      );
 
   final String activityId;
 

@@ -41,10 +41,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
         _activityService.fetchActivities(),
       ]);
 
-      final outings = filterPlannedOutingsForUser(
-        plannedOutings: results[0] as List<PlannedOuting>,
-        userId: currentUserId,
-      );
+      final outings = results[0] as List<PlannedOuting>;
 
       return _OutingsData(
         outings: outings,
@@ -248,7 +245,7 @@ class _PlannedOutingCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: outing.users.isEmpty
-                  ? [const Chip(label: Text('Aucun utilisateur'))]
+                  ? const <Widget>[Chip(label: Text('Aucun utilisateur'))]
                   : outing.users
                         .map(
                           (user) => Chip(
@@ -281,7 +278,7 @@ class _PlannedOutingCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            width: 72,
+                            width: 85,
                             padding: const EdgeInsets.symmetric(
                               vertical: 8,
                               horizontal: 10,
@@ -291,7 +288,7 @@ class _PlannedOutingCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
-                              activity.time.isEmpty ? '—:—' : activity.time,
+                              activity.time.isEmpty ? '—:—' : activity.time.replaceAll(' ', '\n'),
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
@@ -573,20 +570,56 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
     });
   }
 
-  Future<void> _pickTime(int index) async {
+  Future<void> _pickDateTime(int index) async {
+    final now = DateTime.now();
     final current = _activityDrafts[index].timeController.text;
-    final initialTime = _parseTimeOfDay(current) ?? TimeOfDay.now();
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-    );
-
-    if (picked == null) {
-      return;
+    
+    // Parse current if available (format: DD/MM/YYYY HH:mm)
+    DateTime? initialDate;
+    TimeOfDay? initialTime;
+    if (current.isNotEmpty && current.length >= 16) {
+      try {
+        final parts = current.split(' ');
+        final dateParts = parts[0].split('/');
+        final timeParts = parts[1].split(':');
+        if (dateParts.length == 3 && timeParts.length == 2) {
+          initialDate = DateTime(
+            int.parse(dateParts[2]),
+            int.parse(dateParts[1]),
+            int.parse(dateParts[0]),
+          );
+          initialTime = TimeOfDay(
+            hour: int.parse(timeParts[0]),
+            minute: int.parse(timeParts[1]),
+          );
+        }
+      } catch (_) {}
     }
 
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate ?? now,
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+    );
+
+    if (pickedDate == null || !mounted) return;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime ?? TimeOfDay.now(),
+    );
+
+    if (pickedTime == null || !mounted) return;
+
+    final day = pickedDate.day.toString().padLeft(2, '0');
+    final month = pickedDate.month.toString().padLeft(2, '0');
+    final year = pickedDate.year.toString();
+    final hour = pickedTime.hour.toString().padLeft(2, '0');
+    final minute = pickedTime.minute.toString().padLeft(2, '0');
+
     setState(() {
-      _activityDrafts[index].timeController.text = picked.format(context);
+      _activityDrafts[index].timeController.text = '$day/$month/$year $hour:$minute';
     });
   }
 
@@ -776,7 +809,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
                         _activityDrafts[index].selectedActivity = activity;
                       });
                     },
-                    onPickTime: () => _pickTime(index),
+                    onPickDateTime: () => _pickDateTime(index),
                     onRemove: () => _removeActivity(index),
                   ),
                 ),
@@ -814,7 +847,7 @@ class _ActivityDraftRow extends StatelessWidget {
     required this.index,
     required this.canRemove,
     required this.onSelectActivity,
-    required this.onPickTime,
+    required this.onPickDateTime,
     required this.onRemove,
   });
 
@@ -823,7 +856,7 @@ class _ActivityDraftRow extends StatelessWidget {
   final int index;
   final bool canRemove;
   final ValueChanged<Activity?> onSelectActivity;
-  final VoidCallback onPickTime;
+  final VoidCallback onPickDateTime;
   final VoidCallback onRemove;
 
   @override
@@ -881,13 +914,13 @@ class _ActivityDraftRow extends StatelessWidget {
             TextField(
               controller: draft.timeController,
               readOnly: true,
-              onTap: onPickTime,
+              onTap: onPickDateTime,
               decoration: InputDecoration(
-                labelText: 'Heure',
-                hintText: 'Sélectionne l’heure',
+                labelText: 'Date et heure',
+                hintText: 'Sélectionne la date et l’heure',
                 suffixIcon: IconButton(
-                  onPressed: onPickTime,
-                  icon: const Icon(Icons.schedule_outlined),
+                  onPressed: onPickDateTime,
+                  icon: const Icon(Icons.calendar_month_outlined),
                 ),
               ),
             ),

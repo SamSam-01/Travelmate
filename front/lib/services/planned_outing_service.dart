@@ -139,8 +139,8 @@ class PlannedOutingService {
 
     return {
       for (final entry in grouped.entries)
-        entry.key: entry.value
-          ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder)),
+        entry.key: (entry.value
+          ..sort((left, right) => left.sortOrder.compareTo(right.sortOrder))),
     }.map(
       (outingId, links) => MapEntry(
         outingId,
