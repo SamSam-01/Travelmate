@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:front/screens/account/account_page.dart';
+import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
 import 'commons.dart';
@@ -21,17 +21,41 @@ class MyApp extends StatelessWidget {
       title: 'CRAZER',
       theme: lightTheme,
       darkTheme: darkTheme,
-      home: const HomePage(),
       navigatorKey: navigatorKey,
       initialRoute: Screens.home,
       routes: {
         Screens.home: (_) => const HomePage(),
         Screens.login: (_) => const LoginPage(),
-        Screens.profile: (_) => const AccountPage(),
-        '/account': (_) => const AccountPage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == Screens.app || settings.name == Screens.profile) {
+          final initialTab = _resolveInitialTab(
+            settings.name,
+            settings.arguments,
+          );
+
+          return MaterialPageRoute(
+            builder: (_) => AuthenticatedAppShell(initialTab: initialTab),
+            settings: settings,
+          );
+        }
+
+        return null;
       },
     );
   }
+}
+
+AppShellTab _resolveInitialTab(String? routeName, Object? arguments) {
+  if (arguments is AppShellTab) {
+    return arguments;
+  }
+
+  if (routeName == Screens.profile) {
+    return AppShellTab.profile;
+  }
+
+  return AppShellTab.home;
 }
 
 extension ContextExtension on BuildContext {

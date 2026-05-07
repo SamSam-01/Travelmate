@@ -6,6 +6,7 @@ library;
 export 'package:front/screens/profile/profile_screen.dart';
 
 class Screens {
+  static const app = '/app';
   static const tutorial = '/tutorial';
   static const welcome = '/welcome';
   static const login = '/login';
