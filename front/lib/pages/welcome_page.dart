@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:front/main.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
-import 'package:front/theme/crazer_theme.dart';
+import 'package:front/styles/colors.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});

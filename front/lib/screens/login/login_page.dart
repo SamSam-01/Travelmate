@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
-import 'package:front/theme/crazer_theme.dart';
+import 'package:front/styles/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {

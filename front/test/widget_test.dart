@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:front/main.dart';
+import 'package:front/screens.dart';
 import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
-import 'package:front/screens.dart';
-import 'package:front/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
