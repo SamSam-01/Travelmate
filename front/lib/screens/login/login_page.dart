@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
+import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,8 +17,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
   late final StreamSubscription<AuthState> _authStateSubscription;
@@ -37,8 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailFocusNode.dispose();
+    _usernameFocusNode.dispose();
     _passwordFocusNode.dispose();
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _authStateSubscription.cancel();
     super.dispose();
@@ -53,28 +59,42 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final email = _emailController.text.trim();
+      final username = _usernameController.text.trim().toLowerCase();
       final password = _passwordController.text.trim();
       final response = _isSignUp
-          ? await supabase.auth.signUp(email: email, password: password)
+          ? await supabase.auth.signUp(
+              email: email,
+              password: password,
+              data: <String, dynamic>{
+                'username': username,
+                'display_name': username,
+              },
+            )
           : await supabase.auth.signInWithPassword(
               email: email,
               password: password,
             );
 
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context)!;
       if (response.session != null) {
         context.showSnackBar(
-          _isSignUp ? 'Compte créé avec succès !' : 'Connexion réussie !',
+          _isSignUp
+              ? localizations.loginSignUpSuccess
+              : localizations.loginSignInSuccess,
         );
       } else if (_isSignUp) {
-        context.showSnackBar(
-          'Vérifiez votre email pour confirmer votre compte',
-        );
+        context.showSnackBar(localizations.loginCheckEmail);
       }
     } on AuthException catch (error) {
       if (mounted) context.showSnackBar(error.message, isError: true);
     } catch (_) {
-      if (mounted) context.showSnackBar('Erreur inattendue', isError: true);
+      if (mounted) {
+        context.showSnackBar(
+          AppLocalizations.of(context)!.loginUnexpectedError,
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -112,80 +132,63 @@ class _LoginPageState extends State<LoginPage> {
 
     final message = error is AuthException
         ? error.message
-        : 'Erreur inattendue';
+        : AppLocalizations.of(context)!.loginUnexpectedError;
     context.showSnackBar(message, isError: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _isSignUp ? 'Créer un compte' : 'Se connecter';
-    final subtitle = _isSignUp
-        ? 'Crée ton espace pour retrouver tes voyages.'
-        : 'Connecte-toi pour accéder à ton espace.';
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final localizations = AppLocalizations.of(context)!;
+    final title = _isSignUp
+        ? localizations.loginCreateAccount
+        : localizations.signIn;
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.scaffoldBackgroundColor,
-              colorScheme.surface,
-              theme.scaffoldBackgroundColor,
-            ],
-          ),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        child: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isCompact = constraints.maxHeight < 700;
-
-                  return Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: constraints.maxWidth > 420
-                            ? 420
-                            : constraints.maxWidth,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const _LoginTopBar(),
-                            SizedBox(height: isCompact ? 8 : 20),
-                            _CrazerLoginHeader(
-                              title: title,
-                              subtitle: subtitle,
-                              isCompact: isCompact,
-                            ),
-                            SizedBox(height: isCompact ? 18 : 28),
-                            _LoginFormCard(
-                              isLoading: _isLoading,
-                              isSignUp: _isSignUp,
-                              emailController: _emailController,
-                              passwordController: _passwordController,
-                              emailFocusNode: _emailFocusNode,
-                              passwordFocusNode: _passwordFocusNode,
-                              onSubmitted: _submit,
-                              onToggleMode: _toggleMode,
-                              isCompact: isCompact,
-                            ),
-                            SizedBox(height: isCompact ? 8 : 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+      ),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(24),
+            children: [
+              const SizedBox(height: 48),
+              const _CrazerLoginHeader(),
+              const SizedBox(height: 48),
+              _LoginFormFields(
+                emailController: _emailController,
+                usernameController: _usernameController,
+                passwordController: _passwordController,
+                emailFocusNode: _emailFocusNode,
+                usernameFocusNode: _usernameFocusNode,
+                passwordFocusNode: _passwordFocusNode,
+                isSignUp: _isSignUp,
+                onSubmitted: _submit,
               ),
-            ),
+              const SizedBox(height: 32),
+              _LoginPrimaryButton(
+                isLoading: _isLoading,
+                isSignUp: _isSignUp,
+                onPressed: _submit,
+              ),
+              const SizedBox(height: 16),
+              _LoginModeToggle(
+                isLoading: _isLoading,
+                isSignUp: _isSignUp,
+                onPressed: _toggleMode,
+              ),
+              const SizedBox(height: 32),
+              _BackHomeButton(isLoading: _isLoading),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),
@@ -194,111 +197,57 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _CrazerLoginHeader extends StatelessWidget {
-  const _CrazerLoginHeader({
-    required this.title,
-    required this.subtitle,
-    required this.isCompact,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool isCompact;
+  const _CrazerLoginHeader();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Column(
       children: [
-        SizedBox(
-          width: isCompact ? 210 : 300,
-          height: isCompact ? 150 : 220,
-          child: Image.asset(
-            'assets/images/Crazer_LOGO.png',
-            fit: BoxFit.contain,
-          ),
+        Image.asset(
+          'assets/images/Crazer_LOGO.png',
+          height: 96,
+          fit: BoxFit.contain,
         ),
-        SizedBox(height: isCompact ? 0 : 4),
+        const SizedBox(height: 16),
         Text(
           'CRAZER',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: colorScheme.primary,
+            color: CrazerColors.lime,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
           ),
           textAlign: TextAlign.center,
-        ),
-        SizedBox(height: isCompact ? 10 : 18),
-        Text(
-          title,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: isCompact ? 6 : 8),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 280),
-          child: Text(
-            subtitle,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.textTheme.bodyMedium?.color,
-              height: 1.45,
-            ),
-            textAlign: TextAlign.center,
-          ),
         ),
       ],
     );
   }
 }
 
-class _LoginTopBar extends StatelessWidget {
-  const _LoginTopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        const Spacer(),
-      ],
-    );
-  }
-}
-
-class _LoginFormCard extends StatelessWidget {
-  const _LoginFormCard({
-    required this.isLoading,
-    required this.isSignUp,
+class _LoginFormFields extends StatelessWidget {
+  const _LoginFormFields({
     required this.emailController,
+    required this.usernameController,
     required this.passwordController,
     required this.emailFocusNode,
+    required this.usernameFocusNode,
     required this.passwordFocusNode,
+    required this.isSignUp,
     required this.onSubmitted,
-    required this.onToggleMode,
-    required this.isCompact,
   });
 
-  final bool isLoading;
-  final bool isSignUp;
   final TextEditingController emailController;
+  final TextEditingController usernameController;
   final TextEditingController passwordController;
   final FocusNode emailFocusNode;
+  final FocusNode usernameFocusNode;
   final FocusNode passwordFocusNode;
+  final bool isSignUp;
   final VoidCallback onSubmitted;
-  final VoidCallback onToggleMode;
-  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: emailController,
@@ -307,54 +256,76 @@ class _LoginFormCard extends StatelessWidget {
           textInputAction: TextInputAction.next,
           autocorrect: false,
           autofillHints: const [AutofillHints.email],
-          decoration: const InputDecoration(
-            labelText: 'Email',
-            prefixIcon: Icon(Icons.email_outlined),
+          decoration: InputDecoration(
+            labelText: localizations.loginEmail,
+            prefixIcon: const Icon(Icons.email_outlined),
           ),
-          validator: _validateEmail,
-          onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
+          validator: (value) => _validateEmail(context, value),
+          onFieldSubmitted: (_) {
+            if (isSignUp) {
+              usernameFocusNode.requestFocus();
+              return;
+            }
+            passwordFocusNode.requestFocus();
+          },
         ),
-        SizedBox(height: isCompact ? 12 : 16),
+        if (isSignUp) ...[
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: usernameController,
+            focusNode: usernameFocusNode,
+            textInputAction: TextInputAction.next,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.username],
+            decoration: InputDecoration(
+              labelText: localizations.loginUsername,
+              helperText: localizations.loginUsernameHint,
+              prefixIcon: const Icon(Icons.alternate_email_outlined),
+            ),
+            validator: (value) => _validateUsername(context, value),
+            onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
+          ),
+        ],
+        const SizedBox(height: 16),
         TextFormField(
           controller: passwordController,
           focusNode: passwordFocusNode,
           obscureText: true,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.password],
-          decoration: const InputDecoration(
-            labelText: 'Mot de passe',
-            prefixIcon: Icon(Icons.lock_outlined),
+          decoration: InputDecoration(
+            labelText: localizations.loginPassword,
+            prefixIcon: const Icon(Icons.lock_outlined),
           ),
-          validator: _validatePassword,
+          validator: (value) => _validatePassword(context, value),
           onFieldSubmitted: (_) => onSubmitted(),
-        ),
-        SizedBox(height: isCompact ? 18 : 24),
-        _LoginPrimaryButton(
-          isLoading: isLoading,
-          isSignUp: isSignUp,
-          onPressed: onSubmitted,
-        ),
-        SizedBox(height: isCompact ? 10 : 14),
-        _LoginModeToggle(
-          isLoading: isLoading,
-          isSignUp: isSignUp,
-          onPressed: onToggleMode,
         ),
       ],
     );
   }
 
-  String? _validateEmail(String? value) {
+  String? _validateEmail(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Renseignez votre email';
-    if (!email.contains('@')) return 'Email invalide';
+    if (email.isEmpty) return localizations.loginEmailRequired;
+    if (!email.contains('@')) return localizations.loginEmailInvalid;
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validateUsername(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
+    final username = value?.trim() ?? '';
+    final isValid = RegExp(r'^[a-zA-Z0-9_.]{2,20}$').hasMatch(username);
+    if (username.isEmpty) return localizations.loginUsernameRequired;
+    if (!isValid) return localizations.loginUsernameInvalid;
+    return null;
+  }
+
+  String? _validatePassword(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final password = value ?? '';
-    if (password.isEmpty) return 'Renseignez votre mot de passe';
-    if (password.length < 6) return '6 caracteres minimum';
+    if (password.isEmpty) return localizations.loginPasswordRequired;
+    if (password.length < 6) return localizations.loginPasswordTooShort;
     return null;
   }
 }
@@ -372,6 +343,8 @@ class _LoginPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return SizedBox(
       height: 56,
       child: ElevatedButton(
@@ -383,7 +356,9 @@ class _LoginPrimaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Text(
-                isSignUp ? 'Créer un compte' : 'Se connecter',
+                isSignUp
+                    ? localizations.loginCreateAccount
+                    : localizations.signIn,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -407,19 +382,37 @@ class _LoginModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
 
     return TextButton(
       onPressed: isLoading ? null : onPressed,
       child: Text(
         isSignUp
-            ? 'Déjà un compte ? Se connecter'
-            : 'Pas de compte ? Créer un compte',
-        style: TextStyle(
-          color: colorScheme.primary,
+            ? localizations.loginAlreadyHaveAccount
+            : localizations.loginNoAccount,
+        style: const TextStyle(
+          color: CrazerColors.lime,
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+}
+
+class _BackHomeButton extends StatelessWidget {
+  const _BackHomeButton({required this.isLoading});
+
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return TextButton.icon(
+      onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+      icon: const Icon(Icons.home_outlined),
+      label: Text(localizations.backHome),
+      style: TextButton.styleFrom(foregroundColor: CrazerColors.textSecondary),
     );
   }
 }

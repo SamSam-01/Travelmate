@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
@@ -8,7 +10,7 @@ import 'commons.dart';
 
 Future<void> main() async {
   await initializeApp();
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 final supabase = Supabase.instance.client;
@@ -19,11 +21,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CRAZER',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.dark,
       navigatorKey: navigatorKey,
+      locale: const Locale('fr'),
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       initialRoute: Screens.home,
       routes: {
         Screens.home: (_) => const HomePage(),
