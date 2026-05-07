@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:front/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:front/main.dart';
 
 void main() {
   setUpAll(() async {
