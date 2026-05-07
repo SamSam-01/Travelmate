@@ -85,6 +85,43 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_isLoading) return;
+
+    final email = _emailController.text.trim();
+    final emailError = validateEmail(email);
+    if (emailError != null) {
+      context.showSnackBar(emailError, isError: true);
+      _emailFocusNode.requestFocus();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: passwordResetRedirectUrl,
+      );
+      if (!mounted) return;
+      context.showSnackBar(
+        'Email de reinitialisation envoye. Verifiez votre boite mail.',
+      );
+    } on AuthException catch (error) {
+      if (mounted) context.showSnackBar(error.message, isError: true);
+    } catch (_) {
+      if (mounted) context.showSnackBar('Erreur inattendue', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   bool _validateForm() {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return false;
@@ -100,6 +137,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleAuthStateChange(AuthState data) {
     if (!mounted || _redirecting || data.session == null) return;
+    if (data.event == AuthChangeEvent.passwordRecovery) return;
 
     _redirecting = true;
     Navigator.of(context).pushAndRemoveUntil(
@@ -146,7 +184,10 @@ class _LoginPageState extends State<LoginPage> {
                 passwordController: _passwordController,
                 emailFocusNode: _emailFocusNode,
                 passwordFocusNode: _passwordFocusNode,
+                isSignUp: _isSignUp,
+                isLoading: _isLoading,
                 onSubmitted: _submit,
+                onForgotPassword: _resetPassword,
               ),
               const SizedBox(height: 32),
               _LoginPrimaryButton(
@@ -203,14 +244,20 @@ class _LoginFormFields extends StatelessWidget {
     required this.passwordController,
     required this.emailFocusNode,
     required this.passwordFocusNode,
+    required this.isSignUp,
+    required this.isLoading,
     required this.onSubmitted,
+    required this.onForgotPassword,
   });
 
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final FocusNode emailFocusNode;
   final FocusNode passwordFocusNode;
+  final bool isSignUp;
+  final bool isLoading;
   final VoidCallback onSubmitted;
+  final VoidCallback onForgotPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +274,7 @@ class _LoginFormFields extends StatelessWidget {
             labelText: 'Email',
             prefixIcon: Icon(Icons.email_outlined),
           ),
-          validator: _validateEmail,
+          validator: validateEmail,
           onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
         ),
         const SizedBox(height: 16),
@@ -241,26 +288,42 @@ class _LoginFormFields extends StatelessWidget {
             labelText: 'Mot de passe',
             prefixIcon: Icon(Icons.lock_outlined),
           ),
-          validator: _validatePassword,
+          validator: validatePassword,
           onFieldSubmitted: (_) => onSubmitted(),
         ),
+        if (!isSignUp) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: isLoading ? null : onForgotPassword,
+              child: const Text(
+                'Mot de passe oublie ?',
+                style: TextStyle(
+                  color: CrazerColors.lime,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
+}
 
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Renseignez votre email';
-    if (!email.contains('@')) return 'Email invalide';
-    return null;
-  }
+String? validateEmail(String? value) {
+  final email = value?.trim() ?? '';
+  if (email.isEmpty) return 'Renseignez votre email';
+  if (!email.contains('@')) return 'Email invalide';
+  return null;
+}
 
-  String? _validatePassword(String? value) {
-    final password = value ?? '';
-    if (password.isEmpty) return 'Renseignez votre mot de passe';
-    if (password.length < 6) return '6 caracteres minimum';
-    return null;
-  }
+String? validatePassword(String? value) {
+  final password = value ?? '';
+  if (password.isEmpty) return 'Renseignez votre mot de passe';
+  if (password.length < 6) return '6 caracteres minimum';
+  return null;
 }
 
 class _LoginPrimaryButton extends StatelessWidget {

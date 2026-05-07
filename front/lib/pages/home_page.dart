@@ -75,12 +75,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final hasMapboxToken = mapboxAccessToken.isNotEmpty;
+    final canShowMap = isMapboxSupported && hasMapboxToken;
 
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
-            child: hasMapboxToken
+            child: canShowMap
                 ? MapWidget(
                     key: ValueKey(_styleUri),
                     styleUri: _styleUri,
@@ -92,7 +93,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onMapCreated: _handleMapCreated,
                   )
-                : const _MissingMapboxToken(),
+                : _MapUnavailableState(isWeb: !isMapboxSupported),
           ),
           SafeArea(
             child: Padding(
@@ -114,8 +115,8 @@ class _HomePageState extends State<HomePage> {
                     alignment: Alignment.bottomRight,
                     child: _MapControls(
                       useSatellite: _useSatellite,
-                      onStylePressed: hasMapboxToken ? _toggleStyle : null,
-                      onResetPressed: hasMapboxToken ? _resetCamera : null,
+                      onStylePressed: canShowMap ? _toggleStyle : null,
+                      onResetPressed: canShowMap ? _resetCamera : null,
                     ),
                   ),
                 ],
@@ -268,11 +269,20 @@ class _MapIconButton extends StatelessWidget {
   }
 }
 
-class _MissingMapboxToken extends StatelessWidget {
-  const _MissingMapboxToken();
+class _MapUnavailableState extends StatelessWidget {
+  const _MapUnavailableState({required this.isWeb});
+
+  final bool isWeb;
 
   @override
   Widget build(BuildContext context) {
+    final title = isWeb
+        ? 'Carte indisponible sur le web'
+        : 'Token Mapbox manquant';
+    final description = isWeb
+        ? 'Cette preview tourne dans le navigateur, et l integration Mapbox actuelle de ce projet n y est pas supportee. Utilisez le simulateur iOS pour la carte.'
+        : 'Ajoutez MAPBOX_ACCESS_TOKEN dans front/.env puis relancez l app avec les dart-define.';
+
     return Container(
       color: CrazerColors.background,
       padding: const EdgeInsets.all(24),
@@ -289,13 +299,13 @@ class _MissingMapboxToken extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Token Mapbox manquant',
+                title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
               Text(
-                'Ajoutez MAPBOX_ACCESS_TOKEN dans front/.env puis relancez l\'app avec les dart-define.',
+                description,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),

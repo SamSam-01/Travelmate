@@ -10,7 +10,11 @@ Copy `.env.template` to `.env`, then fill:
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 MAPBOX_ACCESS_TOKEN=
+PASSWORD_RESET_REDIRECT_URL=
 ```
+
+`PASSWORD_RESET_REDIRECT_URL` is optional. On web, the app falls back to the
+current origin with `?mode=reset-password`.
 
 Run the app with:
 
