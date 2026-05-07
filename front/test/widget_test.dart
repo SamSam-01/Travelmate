@@ -35,8 +35,8 @@ void main() {
     await tester.tap(find.text('Se connecter'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pas de compte ? Créer un compte'), findsOneWidget);
     expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.text('CRAZER'), findsOneWidget);
   });
 
   testWidgets('authenticated shell shows home tab by default', (

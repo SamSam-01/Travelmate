@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
-import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -120,50 +119,73 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final title = _isSignUp ? 'Créer un compte' : 'Se connecter';
+    final subtitle = _isSignUp
+        ? 'Crée ton espace pour retrouver tes voyages.'
+        : 'Connecte-toi pour accéder à ton espace.';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.all(24),
-            children: [
-              const SizedBox(height: 48),
-              const _CrazerLoginHeader(),
-              const SizedBox(height: 48),
-              _LoginFormFields(
-                emailController: _emailController,
-                passwordController: _passwordController,
-                emailFocusNode: _emailFocusNode,
-                passwordFocusNode: _passwordFocusNode,
-                onSubmitted: _submit,
-              ),
-              const SizedBox(height: 32),
-              _LoginPrimaryButton(
-                isLoading: _isLoading,
-                isSignUp: _isSignUp,
-                onPressed: _submit,
-              ),
-              const SizedBox(height: 16),
-              _LoginModeToggle(
-                isLoading: _isLoading,
-                isSignUp: _isSignUp,
-                onPressed: _toggleMode,
-              ),
-              const SizedBox(height: 32),
-              _BackHomeButton(isLoading: _isLoading),
-              const SizedBox(height: 24),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.scaffoldBackgroundColor,
+              colorScheme.surface,
+              theme.scaffoldBackgroundColor,
             ],
+          ),
+        ),
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCompact = constraints.maxHeight < 700;
+
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: constraints.maxWidth > 420
+                            ? 420
+                            : constraints.maxWidth,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const _LoginTopBar(),
+                            SizedBox(height: isCompact ? 8 : 20),
+                            _CrazerLoginHeader(
+                              title: title,
+                              subtitle: subtitle,
+                              isCompact: isCompact,
+                            ),
+                            SizedBox(height: isCompact ? 18 : 28),
+                            _LoginFormCard(
+                              isLoading: _isLoading,
+                              isSignUp: _isSignUp,
+                              emailController: _emailController,
+                              passwordController: _passwordController,
+                              emailFocusNode: _emailFocusNode,
+                              passwordFocusNode: _passwordFocusNode,
+                              onSubmitted: _submit,
+                              onToggleMode: _toggleMode,
+                              isCompact: isCompact,
+                            ),
+                            SizedBox(height: isCompact ? 8 : 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ),
       ),
@@ -172,49 +194,111 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _CrazerLoginHeader extends StatelessWidget {
-  const _CrazerLoginHeader();
+  const _CrazerLoginHeader({
+    required this.title,
+    required this.subtitle,
+    required this.isCompact,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       children: [
-        Image.asset(
-          'assets/images/Crazer_LOGO.png',
-          height: 96,
-          fit: BoxFit.contain,
+        SizedBox(
+          width: isCompact ? 210 : 300,
+          height: isCompact ? 150 : 220,
+          child: Image.asset(
+            'assets/images/Crazer_LOGO.png',
+            fit: BoxFit.contain,
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isCompact ? 0 : 4),
         Text(
           'CRAZER',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: CrazerColors.lime,
+            color: colorScheme.primary,
             fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
           ),
           textAlign: TextAlign.center,
+        ),
+        SizedBox(height: isCompact ? 10 : 18),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: isCompact ? 6 : 8),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Text(
+            subtitle,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.textTheme.bodyMedium?.color,
+              height: 1.45,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );
   }
 }
 
-class _LoginFormFields extends StatelessWidget {
-  const _LoginFormFields({
+class _LoginTopBar extends StatelessWidget {
+  const _LoginTopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        const Spacer(),
+      ],
+    );
+  }
+}
+
+class _LoginFormCard extends StatelessWidget {
+  const _LoginFormCard({
+    required this.isLoading,
+    required this.isSignUp,
     required this.emailController,
     required this.passwordController,
     required this.emailFocusNode,
     required this.passwordFocusNode,
     required this.onSubmitted,
+    required this.onToggleMode,
+    required this.isCompact,
   });
 
+  final bool isLoading;
+  final bool isSignUp;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final FocusNode emailFocusNode;
   final FocusNode passwordFocusNode;
   final VoidCallback onSubmitted;
+  final VoidCallback onToggleMode;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: emailController,
@@ -230,7 +314,7 @@ class _LoginFormFields extends StatelessWidget {
           validator: _validateEmail,
           onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isCompact ? 12 : 16),
         TextFormField(
           controller: passwordController,
           focusNode: passwordFocusNode,
@@ -243,6 +327,18 @@ class _LoginFormFields extends StatelessWidget {
           ),
           validator: _validatePassword,
           onFieldSubmitted: (_) => onSubmitted(),
+        ),
+        SizedBox(height: isCompact ? 18 : 24),
+        _LoginPrimaryButton(
+          isLoading: isLoading,
+          isSignUp: isSignUp,
+          onPressed: onSubmitted,
+        ),
+        SizedBox(height: isCompact ? 10 : 14),
+        _LoginModeToggle(
+          isLoading: isLoading,
+          isSignUp: isSignUp,
+          onPressed: onToggleMode,
         ),
       ],
     );
@@ -311,33 +407,19 @@ class _LoginModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return TextButton(
       onPressed: isLoading ? null : onPressed,
       child: Text(
         isSignUp
             ? 'Déjà un compte ? Se connecter'
             : 'Pas de compte ? Créer un compte',
-        style: const TextStyle(
-          color: CrazerColors.lime,
+        style: TextStyle(
+          color: colorScheme.primary,
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-}
-
-class _BackHomeButton extends StatelessWidget {
-  const _BackHomeButton({required this.isLoading});
-
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: isLoading ? null : () => Navigator.of(context).pop(),
-      icon: const Icon(Icons.home_outlined),
-      label: const Text('Retour à l\'accueil'),
-      style: TextButton.styleFrom(foregroundColor: CrazerColors.textSecondary),
     );
   }
 }
