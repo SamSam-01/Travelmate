@@ -7,40 +7,39 @@
         {
             "name": "Flutter",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "Simulator",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
-            "args": [
-                "--flavor",
-                "dev",
-                "--dart-define",
-                "FLAVOR=dev"
-            ],
-            "cwd": "front"
+            "cwd": "front",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "front",
             "cwd": "front",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "front (profile mode)",
             "cwd": "front",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "args": ["--dart-define-from-file=.env"]
         },
         {
             "name": "front (release mode)",
             "cwd": "front",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "args": ["--dart-define-from-file=.env"]
         }
     ]
 }
