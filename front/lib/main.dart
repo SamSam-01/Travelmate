@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       theme: lightTheme,
       darkTheme: darkTheme,
+      themeMode: ThemeMode.dark,
       navigatorKey: navigatorKey,
       locale: const Locale('fr'),
       localizationsDelegates: [
