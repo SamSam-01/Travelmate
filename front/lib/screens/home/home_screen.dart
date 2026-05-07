@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:front/commons.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
 import 'package:front/main.dart';
@@ -60,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Accueil'), centerTitle: false),
       body: SafeArea(
@@ -101,15 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
               return ListView(
                 children: [
                   HomeCarousel(
-                    title: 'Activités à découvrir',
-                    subtitle: 'Trouvez quoi faire maintenant',
+                    title: localizations.activitiesDiscoverTitle,
+                    subtitle: localizations.activitiesDiscoverSubtitle,
                     items: items,
                   ),
                   const SizedBox(height: 24),
                   if (plannedOutingItems.isNotEmpty)
                     HomeCarousel(
-                      title: 'Sorties planifiées',
-                      subtitle: 'Vos prochaines sorties à venir',
+                      title: localizations.activitiesPlannedTitle,
+                      subtitle: localizations.activitiesPlannedSubtitle,
                       items: plannedOutingItems,
                     )
                   else
@@ -141,6 +144,7 @@ class _HomeScreenEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
 
     return Center(
       child: Column(
@@ -149,7 +153,7 @@ class _HomeScreenEmpty extends StatelessWidget {
           Icon(Icons.explore_outlined, size: 56, color: scheme.primary),
           const SizedBox(height: 16),
           Text(
-            'Aucune activité disponible',
+            localizations.activitiesEmptyTitle,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -157,7 +161,7 @@ class _HomeScreenEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Reviens un peu plus tard ou relance le chargement.',
+            localizations.activitiesEmptyMessage,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
@@ -167,7 +171,7 @@ class _HomeScreenEmpty extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(localizations.retry),
           ),
         ],
       ),
@@ -184,6 +188,7 @@ class _HomeScreenError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final localizations = AppLocalizations.of(context)!;
 
     return Center(
       child: Column(
@@ -192,7 +197,7 @@ class _HomeScreenError extends StatelessWidget {
           Icon(Icons.cloud_off_outlined, size: 56, color: scheme.error),
           const SizedBox(height: 16),
           Text(
-            'Impossible de charger les activités',
+            localizations.activitiesLoadErrorTitle,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -210,7 +215,7 @@ class _HomeScreenError extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Réessayer'),
+            label: Text(localizations.retry),
           ),
         ],
       ),

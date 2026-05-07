@@ -2,6 +2,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:front/commons.dart';
+import 'package:front/l10n/app_localizations.dart';
+import 'package:front/theme/crazer_theme.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class MapsScreen extends StatefulWidget {
@@ -47,30 +49,30 @@ class _MapsScreenState extends State<MapsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     if (mapboxAccessToken.isEmpty) {
-      return const _MapsPlaceholder(
-        title: 'Token Mapbox manquant',
-        message:
-            'Ajoute MAPBOX_ACCESS_TOKEN dans tes dart-defines pour afficher la carte.',
+      return _MapsPlaceholder(
+        title: localizations.mapsMissingTokenTitle,
+        message: localizations.mapsMissingTokenMessage,
       );
     }
 
     if (!_supportsNativeMap) {
-      return const _MapsPlaceholder(
-        title: 'Carte non disponible ici',
-        message:
-            'La vue Mapbox est disponible sur iOS et Android, pas dans cet environnement.',
+      return _MapsPlaceholder(
+        title: localizations.mapsUnavailableTitle,
+        message: localizations.mapsUnavailableMessage,
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Maps'),
+        title: Text(localizations.mapsTitle),
         actions: [
           IconButton(
             onPressed: _resetCamera,
             icon: const Icon(Icons.my_location_outlined),
-            tooltip: 'Recentrer',
+            tooltip: localizations.mapsRecenterTooltip,
           ),
         ],
       ),
@@ -78,6 +80,7 @@ class _MapsScreenState extends State<MapsScreen> {
         children: [
           MapWidget(
             key: const ValueKey('mapbox-map-widget'),
+            // ignore: deprecated_member_use
             cameraOptions: _initialCamera,
             styleUri: MapboxStyles.MAPBOX_STREETS,
             onMapCreated: _handleMapCreated,
@@ -114,8 +117,10 @@ class _MapsPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Maps')),
+      appBar: AppBar(title: Text(localizations.mapsTitle)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

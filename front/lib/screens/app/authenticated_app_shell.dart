@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
+import 'package:front/presentation/pages/friends_page.dart';
 import 'package:front/screens/account/account_page.dart';
 import 'package:front/screens/home/home_screen.dart';
 import 'package:front/screens/maps/maps_screen.dart';
 import 'package:front/screens/outings/outings_screen.dart';
 import 'package:front/styles/colors.dart';
 
-enum AppShellTab { home, maps, outings, profile }
+enum AppShellTab { home, maps, outings, friends, profile }
 
 class AuthenticatedAppShell extends StatefulWidget {
   const AuthenticatedAppShell({
@@ -28,28 +30,30 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
   late final List<_AppTabItem> _tabs = [
     _AppTabItem(
       tab: AppShellTab.home,
-      label: 'Home',
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
       builder: (_) => const HomeScreen(),
     ),
     _AppTabItem(
       tab: AppShellTab.maps,
-      label: 'Maps',
       icon: Icons.map_outlined,
       selectedIcon: Icons.map,
       builder: (_) => const MapsScreen(),
     ),
     _AppTabItem(
       tab: AppShellTab.outings,
-      label: 'Sorties',
       icon: Icons.event_note_outlined,
       selectedIcon: Icons.event,
       builder: (_) => const OutingsScreen(),
     ),
     _AppTabItem(
+      tab: AppShellTab.friends,
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people,
+      builder: (_) => const FriendsPage(),
+    ),
+    _AppTabItem(
       tab: AppShellTab.profile,
-      label: 'Profil',
       icon: Icons.person_outline,
       selectedIcon: Icons.person,
       builder: (_) =>
@@ -69,6 +73,15 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final labels = <AppShellTab, String>{
+      AppShellTab.home: localizations.navigationHome,
+      AppShellTab.maps: localizations.navigationMaps,
+      AppShellTab.outings: 'Sorties',
+      AppShellTab.friends: localizations.navigationFriends,
+      AppShellTab.profile: localizations.navigationProfile,
+    };
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -96,7 +109,7 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
             NavigationDestination(
               icon: Icon(tab.icon),
               selectedIcon: Icon(tab.selectedIcon),
-              label: tab.label,
+              label: labels[tab.tab]!,
             ),
         ],
       ),
@@ -107,14 +120,12 @@ class _AuthenticatedAppShellState extends State<AuthenticatedAppShell> {
 class _AppTabItem {
   const _AppTabItem({
     required this.tab,
-    required this.label,
     required this.icon,
     required this.selectedIcon,
     required this.builder,
   });
 
   final AppShellTab tab;
-  final String label;
   final IconData icon;
   final IconData selectedIcon;
   final WidgetBuilder builder;

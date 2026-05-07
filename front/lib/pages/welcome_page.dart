@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
@@ -10,6 +11,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSession = supabase.auth.currentSession != null;
+    final localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -35,7 +37,7 @@ class WelcomePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Votre compagnon de voyage idéal',
+                localizations.homeTagline,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: CrazerColors.textSecondary,
                 ),
@@ -49,8 +51,8 @@ class WelcomePage extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.explore_outlined),
-                label: const Text(
-                  'Explorer sans compte',
+                label: Text(
+                  localizations.exploreWithoutAccount,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -63,7 +65,7 @@ class WelcomePage extends StatelessWidget {
                 },
                 icon: const Icon(Icons.login_outlined),
                 label: Text(
-                  'Se connecter',
+                  localizations.signIn,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -80,7 +82,7 @@ class WelcomePage extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.map_outlined),
-                  label: const Text('Continuer vers la carte'),
+                  label: Text(localizations.continueToMap),
                   style: TextButton.styleFrom(
                     foregroundColor: CrazerColors.lime,
                   ),

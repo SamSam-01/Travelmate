@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
 import 'package:front/styles/colors.dart';
@@ -16,8 +17,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
   late final StreamSubscription<AuthState> _authStateSubscription;
@@ -38,8 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailFocusNode.dispose();
+    _usernameFocusNode.dispose();
     _passwordFocusNode.dispose();
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _authStateSubscription.cancel();
     super.dispose();
@@ -54,28 +59,42 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final email = _emailController.text.trim();
+      final username = _usernameController.text.trim().toLowerCase();
       final password = _passwordController.text.trim();
       final response = _isSignUp
-          ? await supabase.auth.signUp(email: email, password: password)
+          ? await supabase.auth.signUp(
+              email: email,
+              password: password,
+              data: <String, dynamic>{
+                'username': username,
+                'display_name': username,
+              },
+            )
           : await supabase.auth.signInWithPassword(
               email: email,
               password: password,
             );
 
       if (!mounted) return;
+      final localizations = AppLocalizations.of(context)!;
       if (response.session != null) {
         context.showSnackBar(
-          _isSignUp ? 'Compte créé avec succès !' : 'Connexion réussie !',
+          _isSignUp
+              ? localizations.loginSignUpSuccess
+              : localizations.loginSignInSuccess,
         );
       } else if (_isSignUp) {
-        context.showSnackBar(
-          'Vérifiez votre email pour confirmer votre compte',
-        );
+        context.showSnackBar(localizations.loginCheckEmail);
       }
     } on AuthException catch (error) {
       if (mounted) context.showSnackBar(error.message, isError: true);
     } catch (_) {
-      if (mounted) context.showSnackBar('Erreur inattendue', isError: true);
+      if (mounted) {
+        context.showSnackBar(
+          AppLocalizations.of(context)!.loginUnexpectedError,
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -113,13 +132,16 @@ class _LoginPageState extends State<LoginPage> {
 
     final message = error is AuthException
         ? error.message
-        : 'Erreur inattendue';
+        : AppLocalizations.of(context)!.loginUnexpectedError;
     context.showSnackBar(message, isError: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _isSignUp ? 'Créer un compte' : 'Se connecter';
+    final localizations = AppLocalizations.of(context)!;
+    final title = _isSignUp
+        ? localizations.loginCreateAccount
+        : localizations.signIn;
 
     return Scaffold(
       appBar: AppBar(
@@ -143,9 +165,12 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 48),
               _LoginFormFields(
                 emailController: _emailController,
+                usernameController: _usernameController,
                 passwordController: _passwordController,
                 emailFocusNode: _emailFocusNode,
+                usernameFocusNode: _usernameFocusNode,
                 passwordFocusNode: _passwordFocusNode,
+                isSignUp: _isSignUp,
                 onSubmitted: _submit,
               ),
               const SizedBox(height: 32),
@@ -200,20 +225,28 @@ class _CrazerLoginHeader extends StatelessWidget {
 class _LoginFormFields extends StatelessWidget {
   const _LoginFormFields({
     required this.emailController,
+    required this.usernameController,
     required this.passwordController,
     required this.emailFocusNode,
+    required this.usernameFocusNode,
     required this.passwordFocusNode,
+    required this.isSignUp,
     required this.onSubmitted,
   });
 
   final TextEditingController emailController;
+  final TextEditingController usernameController;
   final TextEditingController passwordController;
   final FocusNode emailFocusNode;
+  final FocusNode usernameFocusNode;
   final FocusNode passwordFocusNode;
+  final bool isSignUp;
   final VoidCallback onSubmitted;
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         TextFormField(
@@ -223,13 +256,36 @@ class _LoginFormFields extends StatelessWidget {
           textInputAction: TextInputAction.next,
           autocorrect: false,
           autofillHints: const [AutofillHints.email],
-          decoration: const InputDecoration(
-            labelText: 'Email',
-            prefixIcon: Icon(Icons.email_outlined),
+          decoration: InputDecoration(
+            labelText: localizations.loginEmail,
+            prefixIcon: const Icon(Icons.email_outlined),
           ),
-          validator: _validateEmail,
-          onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
+          validator: (value) => _validateEmail(context, value),
+          onFieldSubmitted: (_) {
+            if (isSignUp) {
+              usernameFocusNode.requestFocus();
+              return;
+            }
+            passwordFocusNode.requestFocus();
+          },
         ),
+        if (isSignUp) ...[
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: usernameController,
+            focusNode: usernameFocusNode,
+            textInputAction: TextInputAction.next,
+            autocorrect: false,
+            autofillHints: const [AutofillHints.username],
+            decoration: InputDecoration(
+              labelText: localizations.loginUsername,
+              helperText: localizations.loginUsernameHint,
+              prefixIcon: const Icon(Icons.alternate_email_outlined),
+            ),
+            validator: (value) => _validateUsername(context, value),
+            onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
+          ),
+        ],
         const SizedBox(height: 16),
         TextFormField(
           controller: passwordController,
@@ -237,28 +293,39 @@ class _LoginFormFields extends StatelessWidget {
           obscureText: true,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.password],
-          decoration: const InputDecoration(
-            labelText: 'Mot de passe',
-            prefixIcon: Icon(Icons.lock_outlined),
+          decoration: InputDecoration(
+            labelText: localizations.loginPassword,
+            prefixIcon: const Icon(Icons.lock_outlined),
           ),
-          validator: _validatePassword,
+          validator: (value) => _validatePassword(context, value),
           onFieldSubmitted: (_) => onSubmitted(),
         ),
       ],
     );
   }
 
-  String? _validateEmail(String? value) {
+  String? _validateEmail(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Renseignez votre email';
-    if (!email.contains('@')) return 'Email invalide';
+    if (email.isEmpty) return localizations.loginEmailRequired;
+    if (!email.contains('@')) return localizations.loginEmailInvalid;
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validateUsername(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
+    final username = value?.trim() ?? '';
+    final isValid = RegExp(r'^[a-zA-Z0-9_.]{2,20}$').hasMatch(username);
+    if (username.isEmpty) return localizations.loginUsernameRequired;
+    if (!isValid) return localizations.loginUsernameInvalid;
+    return null;
+  }
+
+  String? _validatePassword(BuildContext context, String? value) {
+    final localizations = AppLocalizations.of(context)!;
     final password = value ?? '';
-    if (password.isEmpty) return 'Renseignez votre mot de passe';
-    if (password.length < 6) return '6 caracteres minimum';
+    if (password.isEmpty) return localizations.loginPasswordRequired;
+    if (password.length < 6) return localizations.loginPasswordTooShort;
     return null;
   }
 }
@@ -276,6 +343,8 @@ class _LoginPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return SizedBox(
       height: 56,
       child: ElevatedButton(
@@ -287,7 +356,9 @@ class _LoginPrimaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Text(
-                isSignUp ? 'Créer un compte' : 'Se connecter',
+                isSignUp
+                    ? localizations.loginCreateAccount
+                    : localizations.signIn,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -311,12 +382,14 @@ class _LoginModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return TextButton(
       onPressed: isLoading ? null : onPressed,
       child: Text(
         isSignUp
-            ? 'Déjà un compte ? Se connecter'
-            : 'Pas de compte ? Créer un compte',
+            ? localizations.loginAlreadyHaveAccount
+            : localizations.loginNoAccount,
         style: const TextStyle(
           color: CrazerColors.lime,
           fontWeight: FontWeight.w600,
@@ -333,10 +406,12 @@ class _BackHomeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return TextButton.icon(
       onPressed: isLoading ? null : () => Navigator.of(context).pop(),
       icon: const Icon(Icons.home_outlined),
-      label: const Text('Retour à l\'accueil'),
+      label: Text(localizations.backHome),
       style: TextButton.styleFrom(foregroundColor: CrazerColors.textSecondary),
     );
   }

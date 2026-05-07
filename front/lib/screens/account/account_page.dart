@@ -1,109 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:front/core/constants/app_spacing.dart';
+import 'package:front/data/models/profile_model.dart';
+import 'package:front/domain/entities/friend_request.dart';
+import 'package:front/domain/entities/user_profile.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
+import 'package:front/presentation/pages/user_search_page.dart';
+import 'package:front/presentation/providers/friendship_providers.dart';
+import 'package:front/presentation/widgets/friend_request_widget.dart';
 import 'package:front/screens.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AccountPage extends StatefulWidget {
+class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key, this.requireSession = true});
 
   final bool requireSession;
 
   @override
-  State<AccountPage> createState() => _AccountPageState();
+  ConsumerState<AccountPage> createState() => _AccountPageState();
 }
 
-class _AccountPageState extends State<AccountPage> {
+class _AccountPageState extends ConsumerState<AccountPage> {
   final _usernameController = TextEditingController();
-  final _websiteController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _avatarUrlController = TextEditingController();
 
-  var _loading = true;
+  bool _isPrivate = true;
+  String? _lastProfileSignature;
 
-  /// Called once a user id is received within `onAuthenticated()`
-  Future<void> _getProfile() async {
-    final session = supabase.auth.currentSession;
-    if (session == null) {
-      if (widget.requireSession) {
-        _redirectToLogin();
-      } else {
-        setState(() {
-          _loading = false;
-        });
-      }
-      return;
-    }
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _displayNameController.dispose();
+    _avatarUrlController.dispose();
+    super.dispose();
+  }
 
-    setState(() {
-      _loading = true;
-    });
+  Future<void> _updateProfile(ProfileModel profile) async {
+    final localizations = AppLocalizations.of(context)!;
 
     try {
-      final userId = session.user.id;
-      final data = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-      _usernameController.text = (data['username'] ?? '') as String;
-      _websiteController.text = (data['website'] ?? '') as String;
-    } on PostgrestException catch (error) {
-      if (mounted) context.showSnackBar(error.message, isError: true);
+      final updatedProfile = await ref
+          .read(currentUserProfileProvider.notifier)
+          .updateProfile(
+            profile.copyWith(
+              username: _usernameController.text.trim().toLowerCase(),
+              displayName: _displayNameController.text.trim().isEmpty
+                  ? null
+                  : _displayNameController.text.trim(),
+              avatarUrl: _avatarUrlController.text.trim().isEmpty
+                  ? null
+                  : _avatarUrlController.text.trim(),
+              isPrivate: _isPrivate,
+            ),
+          );
+
+      _applyProfile(updatedProfile);
+      if (!mounted) {
+        return;
+      }
+      context.showSnackBar(localizations.profileUpdatedSuccess);
     } catch (error) {
-      if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
+      if (!mounted) {
+        return;
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+      context.showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
+        isError: true,
+      );
     }
   }
 
-  /// Called when user taps `Update` button
-  Future<void> _updateProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      if (widget.requireSession) {
-        _redirectToLogin();
-      } else if (mounted) {
-        context.showSnackBar('Connexion requise', isError: true);
-      }
+  void _applyProfile(ProfileModel profile) {
+    _usernameController.text = profile.username;
+    _displayNameController.text = profile.displayName ?? '';
+    _avatarUrlController.text = profile.avatarUrl ?? '';
+    _isPrivate = profile.isPrivate;
+  }
+
+  void _syncProfile(ProfileModel profile) {
+    final signature = [
+      profile.id,
+      profile.username,
+      profile.displayName ?? '',
+      profile.avatarUrl ?? '',
+      profile.isPrivate.toString(),
+    ].join('|');
+
+    if (signature == _lastProfileSignature) {
       return;
     }
 
-    setState(() {
-      _loading = true;
-    });
-    final userName = _usernameController.text.trim();
-    final website = _websiteController.text.trim();
-    final updates = {
-      'id': user.id,
-      'username': userName,
-      'website': website,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-    try {
-      await supabase.from('profiles').upsert(updates);
-      if (mounted) context.showSnackBar('Successfully updated profile!');
-    } on PostgrestException catch (error) {
-      if (mounted) context.showSnackBar(error.message, isError: true);
-    } catch (error) {
-      if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
+    _applyProfile(profile);
+    _lastProfileSignature = signature;
   }
 
   void _redirectToLogin() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       Navigator.of(
         context,
         rootNavigator: true,
@@ -115,10 +112,15 @@ class _AccountPageState extends State<AccountPage> {
     try {
       await supabase.auth.signOut();
     } on AuthException catch (error) {
-      if (mounted) context.showSnackBar(error.message, isError: true);
-    } catch (error) {
       if (mounted) {
-        context.showSnackBar('Unexpected error occurred', isError: true);
+        context.showSnackBar(error.message, isError: true);
+      }
+    } catch (_) {
+      if (mounted) {
+        context.showSnackBar(
+          AppLocalizations.of(context)!.loginUnexpectedError,
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -130,43 +132,268 @@ class _AccountPageState extends State<AccountPage> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _getProfile();
-  }
+  Future<void> _respondToRequest(
+    String requestId,
+    FriendRequestStatus status,
+  ) async {
+    final localizations = AppLocalizations.of(context)!;
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _websiteController.dispose();
-    super.dispose();
+    try {
+      await ref
+          .read(friendshipActionsProvider.notifier)
+          .respondToRequest(requestId, status);
+      if (!mounted) {
+        return;
+      }
+      context.showSnackBar(
+        status == FriendRequestStatus.accepted
+            ? localizations.friendRequestAcceptedSuccess
+            : localizations.friendRequestDeclinedSuccess,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      context.showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
+        isError: true,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    final session = supabase.auth.currentSession;
+
+    if (session == null) {
+      if (widget.requireSession) {
+        _redirectToLogin();
+      }
+      return Scaffold(
+        appBar: AppBar(title: Text(localizations.profileTitle)),
+        body: Center(child: Text(localizations.profileLoginRequired)),
+      );
+    }
+
+    final profileAsync = ref.watch(currentUserProfileProvider);
+    final friendsAsync = ref.watch(friendsProvider);
+    final pendingRequestsAsync = ref.watch(pendingRequestsProvider);
+    final actionsState = ref.watch(friendshipActionsProvider);
+    final isSaving = profileAsync.isLoading;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
-        children: [
-          TextFormField(
-            controller: _usernameController,
-            decoration: const InputDecoration(labelText: 'User Name'),
+      appBar: AppBar(
+        title: Text(localizations.profileTitle),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const UserSearchPage()));
+            },
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            tooltip: localizations.friendsSearchAction,
           ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _websiteController,
-            decoration: const InputDecoration(labelText: 'Website'),
-          ),
-          const SizedBox(height: 18),
-          ElevatedButton(
-            onPressed: _loading ? null : _updateProfile,
-            child: Text(_loading ? 'Saving...' : 'Update'),
-          ),
-          const SizedBox(height: 18),
-          TextButton(onPressed: _signOut, child: const Text('Sign Out')),
         ],
+      ),
+      body: profileAsync.when(
+        data: (profile) {
+          _syncProfile(profile);
+
+          return ListView(
+            padding: AppSpacing.pagePadding,
+            children: [
+              _SectionTitle(title: localizations.profileTitle),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                child: Padding(
+                  padding: AppSpacing.pagePadding,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: localizations.profileUsername,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _displayNameController,
+                        decoration: InputDecoration(
+                          labelText: localizations.profileDisplayName,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _avatarUrlController,
+                        decoration: InputDecoration(
+                          labelText: localizations.profileAvatarUrl,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _isPrivate,
+                        onChanged: (value) =>
+                            setState(() => _isPrivate = value),
+                        title: Text(localizations.profilePrivate),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSaving
+                              ? null
+                              : () => _updateProfile(profile),
+                          child: Text(
+                            isSaving
+                                ? localizations.profileSaving
+                                : localizations.profileUpdate,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _SectionTitle(title: localizations.friendsTitle),
+              const SizedBox(height: AppSpacing.md),
+              _FriendsPreview(friendsAsync: friendsAsync),
+              const SizedBox(height: AppSpacing.xl),
+              _SectionTitle(title: localizations.requestsTab),
+              const SizedBox(height: AppSpacing.md),
+              _PendingRequestsPreview(
+                requestsAsync: pendingRequestsAsync,
+                isLoadingAction: actionsState.isLoading,
+                onRespond: _respondToRequest,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              TextButton(
+                onPressed: _signOut,
+                child: Text(localizations.profileSignOut),
+              ),
+            ],
+          );
+        },
+        error: (error, _) => Center(child: Text(error.toString())),
+        loading: () => const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
+}
+
+class _FriendsPreview extends StatelessWidget {
+  const _FriendsPreview({required this.friendsAsync});
+
+  final AsyncValue<List<UserProfile>> friendsAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return friendsAsync.when(
+      data: (friends) {
+        if (friends.isEmpty) {
+          return _EmptyCard(message: localizations.friendsListEmpty);
+        }
+
+        return Column(
+          children: [
+            for (var index = 0; index < friends.length; index++) ...[
+              Card(
+                child: ListTile(
+                  title: Text(friends[index].username),
+                  subtitle: friends[index].displayName == null
+                      ? null
+                      : Text(friends[index].displayName!),
+                ),
+              ),
+              if (index < friends.length - 1)
+                const SizedBox(height: AppSpacing.md),
+            ],
+          ],
+        );
+      },
+      error: (error, _) => _EmptyCard(message: error.toString()),
+      loading: () => const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _PendingRequestsPreview extends StatelessWidget {
+  const _PendingRequestsPreview({
+    required this.requestsAsync,
+    required this.isLoadingAction,
+    required this.onRespond,
+  });
+
+  final AsyncValue<List<FriendRequest>> requestsAsync;
+  final bool isLoadingAction;
+  final Future<void> Function(String requestId, FriendRequestStatus status)
+  onRespond;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
+    return requestsAsync.when(
+      data: (requests) {
+        if (requests.isEmpty) {
+          return _EmptyCard(message: localizations.requestsListEmpty);
+        }
+
+        return Column(
+          children: [
+            for (var index = 0; index < requests.length; index++) ...[
+              FriendRequestWidget(
+                request: requests[index],
+                isLoading: isLoadingAction,
+                onAccept: () =>
+                    onRespond(requests[index].id, FriendRequestStatus.accepted),
+                onDecline: () =>
+                    onRespond(requests[index].id, FriendRequestStatus.declined),
+              ),
+              if (index < requests.length - 1)
+                const SizedBox(height: AppSpacing.md),
+            ],
+          ],
+        );
+      },
+      error: (error, _) => _EmptyCard(message: error.toString()),
+      loading: () => const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  const _EmptyCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: AppSpacing.pagePadding,
+        child: Text(message, textAlign: TextAlign.center),
       ),
     );
   }

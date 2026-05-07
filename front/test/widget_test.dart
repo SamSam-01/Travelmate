@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
 import 'package:front/screens.dart';
 import 'package:front/screens/app/authenticated_app_shell.dart';
@@ -19,7 +21,7 @@ void main() {
   });
 
   testWidgets('CRAZER welcome page smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const ProviderScope(child: MyApp()));
 
     expect(find.text('CRAZER'), findsOneWidget);
     expect(find.text('Explorer sans compte'), findsOneWidget);
@@ -30,53 +32,52 @@ void main() {
   testWidgets('guest can open the login page from home', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const ProviderScope(child: MyApp()));
 
     await tester.tap(find.text('Se connecter'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pas de compte ? Créer un compte'), findsOneWidget);
     expect(find.byType(LoginPage), findsOneWidget);
+    expect(find.text('CRAZER'), findsOneWidget);
   });
 
-  testWidgets('authenticated shell shows home tab by default', (
+  testWidgets('authenticated shell shows all tabs by default', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AuthenticatedAppShell(profileRequiresSession: false),
+      _buildLocalizedApp(
+        home: const AuthenticatedAppShell(profileRequiresSession: false),
       ),
     );
 
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Maps'), findsOneWidget);
+    expect(find.text('Amis'), findsOneWidget);
     expect(find.text('Profil'), findsOneWidget);
-    expect(find.byType(AuthenticatedAppShell), findsOneWidget);
   });
 
   testWidgets('authenticated shell switches to profile tab', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AuthenticatedAppShell(profileRequiresSession: false),
+      _buildLocalizedApp(
+        home: const AuthenticatedAppShell(profileRequiresSession: false),
       ),
     );
 
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Profile'), findsOneWidget);
-    expect(find.text('User Name'), findsOneWidget);
-    expect(find.text('Sign Out'), findsOneWidget);
+    expect(find.text('Profil'), findsWidgets);
+    expect(find.text('Connexion requise'), findsOneWidget);
   });
 
   testWidgets('home page with session CTA opens profile tab', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _buildLocalizedApp(
         initialRoute: Screens.home,
         routes: {
           Screens.home: (_) => const HomePage(hasSessionOverride: true),
@@ -91,15 +92,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('Connexion requise'), findsOneWidget);
   });
 
   testWidgets('authenticated shell opens maps tab', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: AuthenticatedAppShell(profileRequiresSession: false),
+      _buildLocalizedApp(
+        home: const AuthenticatedAppShell(profileRequiresSession: false),
       ),
     );
 
@@ -110,11 +111,11 @@ void main() {
     expect(find.text('Token Mapbox manquant'), findsOneWidget);
   });
 
-  testWidgets('profile tab exposes the sign out action', (
+  testWidgets('profile tab shows login required state without session', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _buildLocalizedApp(
         initialRoute: Screens.app,
         routes: {
           Screens.home: (_) => const HomePage(),
@@ -128,11 +129,27 @@ void main() {
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign Out'), findsOneWidget);
-
-    await tester.tap(find.text('Sign Out'));
-    await tester.pumpAndSettle();
+    expect(find.text('Connexion requise'), findsOneWidget);
   });
+}
+
+Widget _buildLocalizedApp({
+  Widget? home,
+  String? initialRoute,
+  Map<String, WidgetBuilder>? routes,
+  RouteFactory? onGenerateRoute,
+}) {
+  return ProviderScope(
+    child: MaterialApp(
+      locale: const Locale('fr'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: home,
+      initialRoute: initialRoute,
+      routes: routes ?? const <String, WidgetBuilder>{},
+      onGenerateRoute: onGenerateRoute,
+    ),
+  );
 }
 
 Route<dynamic>? _onGenerateRoute(
