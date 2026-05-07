@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/account/account_page.dart';
+import 'package:front/screens/home/home_screen.dart';
 import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -103,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
 
     _redirecting = true;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AccountPage()),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
 

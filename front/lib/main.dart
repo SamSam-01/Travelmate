@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:front/screens/account/account_page.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'commons.dart';
 
 Future<void> main() async {
