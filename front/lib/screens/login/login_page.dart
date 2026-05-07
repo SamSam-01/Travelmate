@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/home/home_screen.dart';
+import 'package:front/screens.dart';
 import 'package:front/theme/crazer_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -102,9 +102,10 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted || _redirecting || data.session == null) return;
 
     _redirecting = true;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-    );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil(Screens.app, (_) => false);
   }
 
   void _handleAuthError(Object error) {

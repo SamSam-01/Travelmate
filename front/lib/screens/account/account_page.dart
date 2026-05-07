@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/login/login_page.dart';
+import 'package:front/screens.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key});
+  const AccountPage({super.key, this.requireSession = true});
+
+  final bool requireSession;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -20,7 +22,13 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _getProfile() async {
     final session = supabase.auth.currentSession;
     if (session == null) {
-      _redirectToLogin();
+      if (widget.requireSession) {
+        _redirectToLogin();
+      } else {
+        setState(() {
+          _loading = false;
+        });
+      }
       return;
     }
 
@@ -56,7 +64,11 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _updateProfile() async {
     final user = supabase.auth.currentUser;
     if (user == null) {
-      _redirectToLogin();
+      if (widget.requireSession) {
+        _redirectToLogin();
+      } else if (mounted) {
+        context.showSnackBar('Connexion requise', isError: true);
+      }
       return;
     }
 
@@ -94,7 +106,8 @@ class _AccountPageState extends State<AccountPage> {
       if (!mounted) return;
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+        rootNavigator: true,
+      ).pushNamedAndRemoveUntil(Screens.login, (_) => false);
     });
   }
 
@@ -111,7 +124,8 @@ class _AccountPageState extends State<AccountPage> {
       if (mounted) {
         Navigator.of(
           context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil(Screens.login, (_) => false);
       }
     }
   }

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:front/main.dart';
-import 'package:front/screens/account/account_page.dart';
-import 'package:front/screens/login/login_page.dart';
+import 'package:front/screens/app/authenticated_app_shell.dart';
+import 'package:front/screens.dart';
 import 'package:front/theme/crazer_theme.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.hasSessionOverride});
+
+  final bool? hasSessionOverride;
 
   @override
   Widget build(BuildContext context) {
+    final hasSession =
+        hasSessionOverride ?? supabase.auth.currentSession != null;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -62,9 +67,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
+                  Navigator.of(context).pushNamed(Screens.login);
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -82,14 +85,12 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              if (supabase.auth.currentSession != null)
+              if (hasSession)
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AccountPage(),
-                      ),
-                    );
+                    Navigator.of(
+                      context,
+                    ).pushNamed(Screens.app, arguments: AppShellTab.profile);
                   },
                   child: Text(
                     'Accéder à mon compte',
