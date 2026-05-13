@@ -47,6 +47,7 @@ class _MapsScreenState extends State<MapsScreen> {
   List<PlaceSearchSuggestion> _suggestions = const [];
   bool _isSearching = false;
   bool _isLoadingPlaceDetails = false;
+  bool _isPlaceDetailsExpanded = false;
   String? _searchError;
   String? _searchSessionToken;
   int _searchVersion = 0;
@@ -338,6 +339,7 @@ class _MapsScreenState extends State<MapsScreen> {
 
     setState(() {
       _selectedPlace = null;
+      _isPlaceDetailsExpanded = false;
     });
   }
 
@@ -402,16 +404,26 @@ class _MapsScreenState extends State<MapsScreen> {
             onClose: () {
               _clearSelection();
             },
+            onExpandedChanged: (isExpanded) {
+              if (!mounted || _isPlaceDetailsExpanded == isExpanded) {
+                return;
+              }
+
+              setState(() {
+                _isPlaceDetailsExpanded = isExpanded;
+              });
+            },
           ),
-          MapPlaceSearchPanel(
-            controller: _searchController,
-            onClear: _clearSearch,
-            onSuggestionSelected: _selectSuggestion,
-            suggestions: _suggestions,
-            isEnabled: _isPlaceSearchEnabled,
-            isLoading: _isSearching || _isLoadingPlaceDetails,
-            errorMessage: _searchError,
-          ),
+          if (!_isPlaceDetailsExpanded)
+            MapPlaceSearchPanel(
+              controller: _searchController,
+              onClear: _clearSearch,
+              onSuggestionSelected: _selectSuggestion,
+              suggestions: _suggestions,
+              isEnabled: _isPlaceSearchEnabled,
+              isLoading: _isSearching || _isLoadingPlaceDetails,
+              errorMessage: _searchError,
+            ),
         ],
       ),
     );

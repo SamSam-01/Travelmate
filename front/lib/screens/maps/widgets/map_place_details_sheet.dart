@@ -10,11 +10,13 @@ class MapPlaceDetailsSheet extends StatefulWidget {
   const MapPlaceDetailsSheet({
     required this.place,
     required this.onClose,
+    this.onExpandedChanged,
     super.key,
   });
 
   final SelectedMapPlace? place;
   final VoidCallback onClose;
+  final ValueChanged<bool>? onExpandedChanged;
 
   @override
   State<MapPlaceDetailsSheet> createState() => _MapPlaceDetailsSheetState();
@@ -23,12 +25,13 @@ class MapPlaceDetailsSheet extends StatefulWidget {
 class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
   static const double _collapsedSize = 0.25;
   static const double _initialSize = 0.30;
-  static const double _expandedSize = 0.88;
+  static const double _expandedSize = 1.0;
   static const double _expandedThreshold = 0.55;
 
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   double _sheetSize = _initialSize;
+  bool _isExpanded = false;
 
   @override
   void initState() {
@@ -74,6 +77,12 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
       return;
     }
 
+    final nextExpanded = nextSize >= _expandedThreshold;
+    if (nextExpanded != _isExpanded) {
+      _isExpanded = nextExpanded;
+      widget.onExpandedChanged?.call(nextExpanded);
+    }
+
     setState(() {
       _sheetSize = nextSize;
     });
@@ -106,7 +115,7 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
           1.0,
         );
     final heroHeight = lerpDouble(96, 260, expansionProgress)!;
-    final heroRadius = lerpDouble(20, 28, expansionProgress)!;
+    final heroRadius = lerpDouble(20, 0, expansionProgress)!;
 
     return DraggableScrollableSheet(
       controller: _sheetController,
@@ -117,23 +126,27 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
       snapSizes: const <double>[_initialSize, _expandedSize],
       builder: (context, scrollController) {
         return DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: CrazerColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 24,
-                offset: Offset(0, -4),
-              ),
-            ],
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(lerpDouble(28, 0, expansionProgress)!),
+            ),
+            boxShadow: expansionProgress > 0.95
+                ? const <BoxShadow>[]
+                : const <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 24,
+                      offset: Offset(0, -4),
+                    ),
+                  ],
           ),
           child: CustomScrollView(
             controller: scrollController,
             slivers: [
               SliverToBoxAdapter(
                 child: SafeArea(
-                  top: false,
+                  top: true,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
                     child: Column(

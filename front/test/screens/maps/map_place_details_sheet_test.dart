@@ -95,6 +95,8 @@ void main() {
   testWidgets('should reveal extended details when more details is tapped', (
     WidgetTester tester,
   ) async {
+    var isExpanded = false;
+
     await tester.pumpWidget(
       _buildLocalizedApp(
         child: Scaffold(
@@ -108,6 +110,9 @@ void main() {
               openingHours: <String>['lundi: 09:00-22:00'],
             ),
             onClose: _noop,
+            onExpandedChanged: (value) {
+              isExpanded = value;
+            },
           ),
         ),
       ),
@@ -116,6 +121,7 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
     await tester.pumpAndSettle();
 
+    expect(isExpanded, isTrue);
     expect(find.text('Google Places'), findsOneWidget);
     expect(find.text('lundi: 09:00-22:00'), findsOneWidget);
   });
