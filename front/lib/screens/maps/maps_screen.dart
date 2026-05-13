@@ -1,10 +1,15 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:front/commons.dart';
 import 'package:front/l10n/app_localizations.dart';
-import 'package:front/styles/colors.dart';
+import 'package:front/screens/maps/models/selected_map_place.dart';
+import 'package:front/screens/maps/widgets/map_place_details_sheet.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+
+@visibleForTesting
+const String mapsInteractiveStyleUri = MapboxStyles.STANDARD;
 
 class MapsScreen extends StatefulWidget {
   const MapsScreen({super.key});
@@ -14,6 +19,10 @@ class MapsScreen extends StatefulWidget {
 }
 
 class _MapsScreenState extends State<MapsScreen> {
+  static const String _poiInteractionId = 'maps-poi-tap';
+  static const String _placeLabelInteractionId = 'maps-place-label-tap';
+  static const String _mapTapInteractionId = 'maps-map-tap';
+
   static final CameraOptions _initialCamera = CameraOptions(
     center: Point(coordinates: Position(55.4507, -20.8789)),
     zoom: 10,
@@ -22,12 +31,14 @@ class _MapsScreenState extends State<MapsScreen> {
 
   MapboxMap? _mapboxMap;
   String? _mapError;
+  SelectedMapPlace? _selectedPlace;
 
   bool get _supportsNativeMap =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
   void _handleMapCreated(MapboxMap mapboxMap) {
     _mapboxMap = mapboxMap;
+    _registerMapInteractions(mapboxMap);
   }
 
   void _handleMapLoadError(MapLoadingErrorEventData error) {
@@ -45,6 +56,102 @@ class _MapsScreenState extends State<MapsScreen> {
       _initialCamera,
       MapAnimationOptions(duration: 1800, startDelay: 0),
     );
+  }
+
+  void _registerMapInteractions(MapboxMap mapboxMap) {
+    final localizations = AppLocalizations.of(context)!;
+
+    mapboxMap.addInteraction(
+      TapInteraction(
+        StandardPOIs(),
+        (feature, gestureContext) async {
+          await _clearFeatureSelections();
+          await mapboxMap.setFeatureStateForFeaturesetFeature(
+            feature,
+            StandardPOIsState(hide: true),
+          );
+
+          final coordinate = await mapboxMap.coordinateForPixel(
+            gestureContext.touchPosition,
+          );
+          final placeCoordinate =
+              SelectedMapPlace.coordinateFromGeometry(feature.geometry) ??
+              coordinate;
+          _setSelectedPlace(
+            SelectedMapPlace.fromPoi(
+              feature: feature,
+              coordinate: placeCoordinate,
+              sourceLabel: localizations.mapsPlaceDetailsSourcePoi,
+            ),
+          );
+        },
+        radius: 12,
+        stopPropagation: true,
+      ),
+      interactionID: _poiInteractionId,
+    );
+
+    mapboxMap.addInteraction(
+      TapInteraction(
+        StandardPlaceLabels(),
+        (feature, gestureContext) async {
+          await _clearFeatureSelections();
+          await mapboxMap.setFeatureStateForFeaturesetFeature(
+            feature,
+            StandardPlaceLabelsState(select: true),
+          );
+
+          final coordinate = await mapboxMap.coordinateForPixel(
+            gestureContext.touchPosition,
+          );
+          _setSelectedPlace(
+            SelectedMapPlace.fromPlaceLabel(
+              feature: feature,
+              coordinate: coordinate,
+              sourceLabel: localizations.mapsPlaceDetailsSourcePlace,
+            ),
+          );
+        },
+        radius: 16,
+        stopPropagation: true,
+      ),
+      interactionID: _placeLabelInteractionId,
+    );
+
+    mapboxMap.addInteraction(
+      TapInteraction.onMap((_) {
+        _clearSelection();
+      }, stopPropagation: false),
+      interactionID: _mapTapInteractionId,
+    );
+  }
+
+  Future<void> _clearFeatureSelections() async {
+    final mapboxMap = _mapboxMap;
+    if (mapboxMap == null) return;
+
+    try {
+      await mapboxMap.resetFeatureStatesForFeatureset(StandardPOIs());
+      await mapboxMap.resetFeatureStatesForFeatureset(StandardPlaceLabels());
+    } on PlatformException catch (error, stackTrace) {
+      debugPrint('Mapbox feature state reset failed: $error\n$stackTrace');
+    }
+  }
+
+  void _setSelectedPlace(SelectedMapPlace place) {
+    if (!mounted) return;
+    setState(() {
+      _selectedPlace = place;
+    });
+  }
+
+  Future<void> _clearSelection() async {
+    await _clearFeatureSelections();
+    if (!mounted) return;
+
+    setState(() {
+      _selectedPlace = null;
+    });
   }
 
   @override
@@ -82,7 +189,7 @@ class _MapsScreenState extends State<MapsScreen> {
             key: const ValueKey('mapbox-map-widget'),
             // ignore: deprecated_member_use
             cameraOptions: _initialCamera,
-            styleUri: MapboxStyles.MAPBOX_STREETS,
+            styleUri: mapsInteractiveStyleUri,
             onMapCreated: _handleMapCreated,
             onMapLoadErrorListener: _handleMapLoadError,
           ),
@@ -103,6 +210,12 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
             ),
+          MapPlaceDetailsSheet(
+            place: _selectedPlace,
+            onClose: () {
+              _clearSelection();
+            },
+          ),
         ],
       ),
     );

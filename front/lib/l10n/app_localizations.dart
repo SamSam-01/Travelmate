@@ -200,6 +200,84 @@ abstract class AppLocalizations {
   /// **'Recentrer'**
   String get mapsRecenterTooltip;
 
+  /// No description provided for @mapsPlaceDetailsEmptyTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionnez un lieu'**
+  String get mapsPlaceDetailsEmptyTitle;
+
+  /// No description provided for @mapsPlaceDetailsEmptyMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez un point d\'intérêt ou un libellé sur la carte pour afficher ses informations.'**
+  String get mapsPlaceDetailsEmptyMessage;
+
+  /// No description provided for @mapsPlaceDetailsSourcePoi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Point d\'intérêt'**
+  String get mapsPlaceDetailsSourcePoi;
+
+  /// No description provided for @mapsPlaceDetailsSourcePlace.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieu'**
+  String get mapsPlaceDetailsSourcePlace;
+
+  /// No description provided for @mapsPlaceDetailsCategory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Catégorie'**
+  String get mapsPlaceDetailsCategory;
+
+  /// No description provided for @mapsPlaceDetailsGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe'**
+  String get mapsPlaceDetailsGroup;
+
+  /// No description provided for @mapsPlaceDetailsIcon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Icône'**
+  String get mapsPlaceDetailsIcon;
+
+  /// No description provided for @mapsPlaceDetailsTransitMode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de transport'**
+  String get mapsPlaceDetailsTransitMode;
+
+  /// No description provided for @mapsPlaceDetailsTransitStopType.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type d\'arrêt'**
+  String get mapsPlaceDetailsTransitStopType;
+
+  /// No description provided for @mapsPlaceDetailsTransitNetwork.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réseau'**
+  String get mapsPlaceDetailsTransitNetwork;
+
+  /// No description provided for @mapsPlaceDetailsAirportCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code aéroport'**
+  String get mapsPlaceDetailsAirportCode;
+
+  /// No description provided for @mapsPlaceDetailsLongitude.
+  ///
+  /// In fr, this message translates to:
+  /// **'Longitude'**
+  String get mapsPlaceDetailsLongitude;
+
+  /// No description provided for @mapsPlaceDetailsLatitude.
+  ///
+  /// In fr, this message translates to:
+  /// **'Latitude'**
+  String get mapsPlaceDetailsLatitude;
+
   /// No description provided for @resetPasswordTitle.
   ///
   /// In fr, this message translates to:

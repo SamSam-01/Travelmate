@@ -62,6 +62,46 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapsRecenterTooltip => 'Recentrer';
 
   @override
+  String get mapsPlaceDetailsEmptyTitle => 'Sélectionnez un lieu';
+
+  @override
+  String get mapsPlaceDetailsEmptyMessage =>
+      'Touchez un point d\'intérêt ou un libellé sur la carte pour afficher ses informations.';
+
+  @override
+  String get mapsPlaceDetailsSourcePoi => 'Point d\'intérêt';
+
+  @override
+  String get mapsPlaceDetailsSourcePlace => 'Lieu';
+
+  @override
+  String get mapsPlaceDetailsCategory => 'Catégorie';
+
+  @override
+  String get mapsPlaceDetailsGroup => 'Groupe';
+
+  @override
+  String get mapsPlaceDetailsIcon => 'Icône';
+
+  @override
+  String get mapsPlaceDetailsTransitMode => 'Mode de transport';
+
+  @override
+  String get mapsPlaceDetailsTransitStopType => 'Type d\'arrêt';
+
+  @override
+  String get mapsPlaceDetailsTransitNetwork => 'Réseau';
+
+  @override
+  String get mapsPlaceDetailsAirportCode => 'Code aéroport';
+
+  @override
+  String get mapsPlaceDetailsLongitude => 'Longitude';
+
+  @override
+  String get mapsPlaceDetailsLatitude => 'Latitude';
+
+  @override
   String get resetPasswordTitle => 'Nouveau mot de passe';
 
   @override
