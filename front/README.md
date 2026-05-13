@@ -10,6 +10,7 @@ Copy `.env.template` to `.env`, then fill:
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 MAPBOX_ACCESS_TOKEN=
+GOOGLE_PLACES_API_KEY=
 PASSWORD_RESET_REDIRECT_URL=
 ```
 
@@ -21,6 +22,10 @@ Run the app with:
 ```sh
 flutter run --dart-define-from-file=.env
 ```
+
+`GOOGLE_PLACES_API_KEY` is optional. If provided, the Maps screen enables a
+Google Places search flow limited to Autocomplete + Place Details Essentials to
+keep usage costs low.
 
 ## Getting Started
 

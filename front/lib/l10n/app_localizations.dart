@@ -224,6 +224,24 @@ abstract class AppLocalizations {
   /// **'Lieu'**
   String get mapsPlaceDetailsSourcePlace;
 
+  /// No description provided for @mapsPlaceDetailsSourceGoogle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Google Places'**
+  String get mapsPlaceDetailsSourceGoogle;
+
+  /// No description provided for @mapsPlaceDetailsAddress.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse'**
+  String get mapsPlaceDetailsAddress;
+
+  /// No description provided for @mapsPlaceDetailsPlaceId.
+  ///
+  /// In fr, this message translates to:
+  /// **'Place ID'**
+  String get mapsPlaceDetailsPlaceId;
+
   /// No description provided for @mapsPlaceDetailsCategory.
   ///
   /// In fr, this message translates to:
@@ -277,6 +295,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Latitude'**
   String get mapsPlaceDetailsLatitude;
+
+  /// No description provided for @mapsSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher un lieu'**
+  String get mapsSearchHint;
+
+  /// No description provided for @mapsSearchEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun résultat Google Places pour cette recherche.'**
+  String get mapsSearchEmpty;
+
+  /// No description provided for @mapsSearchDisabledMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute GOOGLE_PLACES_API_KEY pour activer la recherche de lieux à bas coût.'**
+  String get mapsSearchDisabledMessage;
+
+  /// No description provided for @mapsSearchPoweredByGoogle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Powered by Google'**
+  String get mapsSearchPoweredByGoogle;
 
   /// No description provided for @resetPasswordTitle.
   ///

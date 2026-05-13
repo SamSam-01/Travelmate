@@ -107,6 +107,16 @@ class MapPlaceDetailsSheet extends StatelessWidget {
                           _coordinatePrecision,
                         ),
                       ),
+                      if (_hasValue(place!.address))
+                        _DetailRow(
+                          label: localizations.mapsPlaceDetailsAddress,
+                          value: place!.address!,
+                        ),
+                      if (_hasValue(place!.placeId))
+                        _DetailRow(
+                          label: localizations.mapsPlaceDetailsPlaceId,
+                          value: place!.placeId!,
+                        ),
                       if (_hasValue(place!.category))
                         _DetailRow(
                           label: localizations.mapsPlaceDetailsCategory,

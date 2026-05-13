@@ -1,11 +1,19 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:front/commons.dart';
+import 'package:front/data/datasources/google_places_remote_data_source.dart';
+import 'package:front/data/repositories/place_search_repository_impl.dart';
+import 'package:front/domain/entities/place_search_suggestion.dart';
+import 'package:front/domain/repositories/place_search_repository.dart';
+import 'package:front/domain/usecases/get_place_details_use_case.dart';
+import 'package:front/domain/usecases/search_place_suggestions_use_case.dart';
 import 'package:front/l10n/app_localizations.dart';
 import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/maps/widgets/map_place_details_sheet.dart';
+import 'package:front/screens/maps/widgets/map_place_search_panel.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 @visibleForTesting
@@ -19,6 +27,8 @@ class MapsScreen extends StatefulWidget {
 }
 
 class _MapsScreenState extends State<MapsScreen> {
+  static const int _minimumSearchLength = 2;
+  static const Duration _searchDebounceDelay = Duration(milliseconds: 350);
   static const String _poiInteractionId = 'maps-poi-tap';
   static const String _placeLabelInteractionId = 'maps-place-label-tap';
   static const String _mapTapInteractionId = 'maps-map-tap';
@@ -32,9 +42,40 @@ class _MapsScreenState extends State<MapsScreen> {
   MapboxMap? _mapboxMap;
   String? _mapError;
   SelectedMapPlace? _selectedPlace;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  List<PlaceSearchSuggestion> _suggestions = const [];
+  bool _isSearching = false;
+  bool _isLoadingPlaceDetails = false;
+  String? _searchError;
+  String? _searchSessionToken;
+  int _searchVersion = 0;
+  bool _ignoreSearchChange = false;
+
+  late final PlaceSearchRepository? _placeSearchRepository =
+      googlePlacesApiKey.isEmpty
+      ? null
+      : PlaceSearchRepositoryImpl(
+          GooglePlacesRemoteDataSource(googlePlacesApiKey),
+        );
+  late final SearchPlaceSuggestionsUseCase? _searchPlaceSuggestionsUseCase =
+      _placeSearchRepository == null
+      ? null
+      : SearchPlaceSuggestionsUseCase(_placeSearchRepository);
+  late final GetPlaceDetailsUseCase? _getPlaceDetailsUseCase =
+      _placeSearchRepository == null
+      ? null
+      : GetPlaceDetailsUseCase(_placeSearchRepository);
 
   bool get _supportsNativeMap =>
       !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+  bool get _isPlaceSearchEnabled => _searchPlaceSuggestionsUseCase != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
 
   void _handleMapCreated(MapboxMap mapboxMap) {
     _mapboxMap = mapboxMap;
@@ -48,6 +89,15 @@ class _MapsScreenState extends State<MapsScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController
+      ..removeListener(_onSearchChanged)
+      ..dispose();
+    super.dispose();
+  }
+
   void _resetCamera() {
     final mapboxMap = _mapboxMap;
     if (mapboxMap == null) return;
@@ -57,6 +107,143 @@ class _MapsScreenState extends State<MapsScreen> {
       MapAnimationOptions(duration: 1800, startDelay: 0),
     );
   }
+
+  void _onSearchChanged() {
+    if (_ignoreSearchChange) {
+      _ignoreSearchChange = false;
+      return;
+    }
+
+    final query = _searchController.text.trim();
+    _searchDebounce?.cancel();
+
+    if (!_isPlaceSearchEnabled || query.length < _minimumSearchLength) {
+      _searchSessionToken = null;
+      setState(() {
+        _suggestions = const [];
+        _searchError = null;
+        _isSearching = false;
+      });
+      return;
+    }
+
+    _searchDebounce = Timer(_searchDebounceDelay, () {
+      _searchGooglePlaces(query);
+    });
+  }
+
+  Future<void> _searchGooglePlaces(String query) async {
+    final useCase = _searchPlaceSuggestionsUseCase;
+    if (useCase == null) return;
+
+    final requestVersion = ++_searchVersion;
+    _searchSessionToken ??= _buildSessionToken();
+
+    setState(() {
+      _isSearching = true;
+      _searchError = null;
+    });
+
+    final result = await useCase(
+      query,
+      sessionToken: _searchSessionToken!,
+      languageCode: Localizations.localeOf(context).languageCode,
+      regionCode: 'FR',
+    );
+
+    if (!mounted || requestVersion != _searchVersion) return;
+
+    result.match(
+      (failure) {
+        setState(() {
+          _isSearching = false;
+          _suggestions = const [];
+          _searchError = failure.message;
+        });
+      },
+      (suggestions) {
+        setState(() {
+          _isSearching = false;
+          _suggestions = suggestions;
+          _searchError = null;
+        });
+      },
+    );
+  }
+
+  Future<void> _selectSuggestion(PlaceSearchSuggestion suggestion) async {
+    final useCase = _getPlaceDetailsUseCase;
+    final mapboxMap = _mapboxMap;
+    if (useCase == null || mapboxMap == null) return;
+
+    setState(() {
+      _isLoadingPlaceDetails = true;
+      _searchError = null;
+      _suggestions = const [];
+    });
+
+    final result = await useCase(
+      suggestion.placeId,
+      sessionToken: _searchSessionToken,
+      languageCode: Localizations.localeOf(context).languageCode,
+      regionCode: 'FR',
+    );
+
+    if (!mounted) return;
+
+    result.match(
+      (failure) {
+        setState(() {
+          _isLoadingPlaceDetails = false;
+          _searchError = failure.message;
+        });
+      },
+      (details) {
+        final place = SelectedMapPlace.fromGooglePlace(
+          suggestion: suggestion,
+          details: details,
+          sourceLabel: AppLocalizations.of(
+            context,
+          )!.mapsPlaceDetailsSourceGoogle,
+        );
+
+        _searchSessionToken = null;
+        _ignoreSearchChange = true;
+        _searchController.text = suggestion.fullText;
+
+        setState(() {
+          _isLoadingPlaceDetails = false;
+          _selectedPlace = place;
+        });
+
+        mapboxMap.flyTo(
+          CameraOptions(
+            center: Point(
+              coordinates: Position(place.longitude, place.latitude),
+            ),
+            zoom: 14,
+            pitch: 20,
+          ),
+          MapAnimationOptions(duration: 1400, startDelay: 0),
+        );
+      },
+    );
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchSessionToken = null;
+    _searchController.clear();
+    setState(() {
+      _suggestions = const [];
+      _searchError = null;
+      _isSearching = false;
+      _isLoadingPlaceDetails = false;
+    });
+  }
+
+  String _buildSessionToken() =>
+      '${DateTime.now().microsecondsSinceEpoch}-${_searchVersion + 1}';
 
   void _registerMapInteractions(MapboxMap mapboxMap) {
     final localizations = AppLocalizations.of(context)!;
@@ -210,6 +397,15 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
             ),
+          MapPlaceSearchPanel(
+            controller: _searchController,
+            onClear: _clearSearch,
+            onSuggestionSelected: _selectSuggestion,
+            suggestions: _suggestions,
+            isEnabled: _isPlaceSearchEnabled,
+            isLoading: _isSearching || _isLoadingPlaceDetails,
+            errorMessage: _searchError,
+          ),
           MapPlaceDetailsSheet(
             place: _selectedPlace,
             onClose: () {

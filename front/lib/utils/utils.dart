@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 const mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+const googlePlacesApiKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
 
 /// Used to initialize any services or other important things for the app
 Future<void> initializeApp() async {

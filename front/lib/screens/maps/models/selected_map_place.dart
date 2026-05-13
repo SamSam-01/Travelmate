@@ -1,3 +1,5 @@
+import 'package:front/domain/entities/place_search_details.dart';
+import 'package:front/domain/entities/place_search_suggestion.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 class SelectedMapPlace {
@@ -6,6 +8,8 @@ class SelectedMapPlace {
     required this.sourceLabel,
     required this.longitude,
     required this.latitude,
+    this.address,
+    this.placeId,
     this.category,
     this.group,
     this.icon,
@@ -19,6 +23,8 @@ class SelectedMapPlace {
   final String sourceLabel;
   final double longitude;
   final double latitude;
+  final String? address;
+  final String? placeId;
   final String? category;
   final String? group;
   final String? icon;
@@ -73,6 +79,22 @@ class SelectedMapPlace {
       longitude: coordinate.coordinates.lng.toDouble(),
       latitude: coordinate.coordinates.lat.toDouble(),
       category: feature.category,
+    );
+  }
+
+  static SelectedMapPlace fromGooglePlace({
+    required PlaceSearchSuggestion suggestion,
+    required PlaceSearchDetails details,
+    required String sourceLabel,
+  }) {
+    return SelectedMapPlace(
+      name: suggestion.title,
+      sourceLabel: sourceLabel,
+      longitude: details.longitude,
+      latitude: details.latitude,
+      address: details.formattedAddress,
+      placeId: details.placeId,
+      category: details.types.isEmpty ? null : details.types.first,
     );
   }
 

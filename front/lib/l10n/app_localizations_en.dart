@@ -75,6 +75,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsPlaceDetailsSourcePlace => 'Place';
 
   @override
+  String get mapsPlaceDetailsSourceGoogle => 'Google Places';
+
+  @override
+  String get mapsPlaceDetailsAddress => 'Address';
+
+  @override
+  String get mapsPlaceDetailsPlaceId => 'Place ID';
+
+  @override
   String get mapsPlaceDetailsCategory => 'Category';
 
   @override
@@ -100,6 +109,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapsPlaceDetailsLatitude => 'Latitude';
+
+  @override
+  String get mapsSearchHint => 'Search for a place';
+
+  @override
+  String get mapsSearchEmpty => 'No Google Places result for this query.';
+
+  @override
+  String get mapsSearchDisabledMessage =>
+      'Add GOOGLE_PLACES_API_KEY to enable low-cost place search.';
+
+  @override
+  String get mapsSearchPoweredByGoogle => 'Powered by Google';
 
   @override
   String get resetPasswordTitle => 'New password';
