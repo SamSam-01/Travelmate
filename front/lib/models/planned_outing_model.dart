@@ -210,6 +210,7 @@ class PlannedOuting {
 
   Map<String, dynamic> toInsertJson() => {
     'title': title,
+    'visibility': visibility.dbValue,
     'scheduled_for': scheduledFor?.toIso8601String(),
   };
 
