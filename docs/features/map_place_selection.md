@@ -7,7 +7,8 @@ L'onglet Maps permet maintenant de toucher un point d'intérêt Mapbox ou un lib
 - Un tap sur un point d'intérêt affiche son nom, son type de source et toutes les métadonnées disponibles remontées par Mapbox.
 - Un tap sur un libellé de lieu affiche son nom, sa catégorie et ses coordonnées.
 - Une recherche Google Places ne se déclenche qu'après 2 caractères et un debounce pour limiter le nombre d'appels facturables.
-- La sélection d'un résultat Google recentre la carte et affiche les champs utiles du lieu, y compris la note, le nombre d'avis et le statut ouvert/fermé quand Google les fournit.
+- La sélection d'un résultat Google recentre la carte et affiche une fiche enrichie avec photo principale, note, nombre d'avis, statut ouvert/fermé, adresse et horaires quand Google les fournit.
+- Quand un lieu est sélectionné, la barre de recherche disparaît pour laisser la place à la fiche détaillée.
 - Un tap sur une zone vide de la carte ferme la sélection courante.
 - Le bouton de fermeture du panneau efface aussi la sélection.
 - Si aucun lieu n'est sélectionné, aucun panneau de détail n'est affiché.

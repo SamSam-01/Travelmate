@@ -29,19 +29,20 @@ void main() {
             body: MapPlaceDetailsSheet(
               place: const SelectedMapPlace(
                 name: 'Gare Saint-Lazare',
-                sourceLabel: 'Point d\'intérêt',
+                sourceLabel: 'Google Places',
                 longitude: 2.325551,
                 latitude: 48.875247,
+                address: '13 Rue d\'Amsterdam, 75008 Paris',
                 rating: 4.6,
                 reviewCount: 2087,
                 isOpenNow: true,
+                openingHours: <String>[
+                  'lundi: 05:00-01:15',
+                  'mardi: 05:00-01:15',
+                ],
                 category: 'station',
-                group: 'transit',
-                icon: 'rail',
-                transitMode: 'rail',
-                transitStopType: 'station',
-                transitNetwork: 'transilien',
-                airportCode: 'CDG',
+                photoAttribution: 'John Smith',
+                photoUrl: 'https://example.com/place-photo.jpg',
               ),
               onClose: _noop,
             ),
@@ -50,17 +51,14 @@ void main() {
       );
 
       expect(find.text('Gare Saint-Lazare'), findsOneWidget);
-      expect(find.text('Point d\'intérêt'), findsOneWidget);
-      expect(find.text('2.325551'), findsOneWidget);
-      expect(find.text('48.875247'), findsOneWidget);
-      expect(find.text('4.6'), findsOneWidget);
-      expect(find.text('2087'), findsOneWidget);
+      expect(find.text('Google Places'), findsOneWidget);
+      expect(find.text('station'), findsOneWidget);
+      expect(find.text('4.6 (2087)'), findsOneWidget);
       expect(find.text('Ouvert'), findsOneWidget);
-      expect(find.text('station'), findsNWidgets(2));
-      expect(find.text('transit'), findsOneWidget);
-      expect(find.text('rail'), findsNWidgets(2));
-      expect(find.text('transilien'), findsOneWidget);
-      expect(find.text('CDG'), findsOneWidget);
+      expect(find.text('13 Rue d\'Amsterdam, 75008 Paris'), findsOneWidget);
+      expect(find.text('lundi: 05:00-01:15'), findsOneWidget);
+      expect(find.text('mardi: 05:00-01:15'), findsOneWidget);
+      expect(find.text('Photo: John Smith'), findsOneWidget);
     },
   );
 

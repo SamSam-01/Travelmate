@@ -9,10 +9,12 @@ class SelectedMapPlace {
     required this.longitude,
     required this.latitude,
     this.address,
-    this.placeId,
     this.rating,
     this.reviewCount,
     this.isOpenNow,
+    List<String>? openingHours,
+    this.photoUrl,
+    this.photoAttribution,
     this.category,
     this.group,
     this.icon,
@@ -20,17 +22,19 @@ class SelectedMapPlace {
     this.transitStopType,
     this.transitNetwork,
     this.airportCode,
-  });
+  }) : _openingHours = openingHours;
 
   final String name;
   final String sourceLabel;
   final double longitude;
   final double latitude;
   final String? address;
-  final String? placeId;
   final double? rating;
   final int? reviewCount;
   final bool? isOpenNow;
+  final List<String>? _openingHours;
+  final String? photoUrl;
+  final String? photoAttribution;
   final String? category;
   final String? group;
   final String? icon;
@@ -38,6 +42,8 @@ class SelectedMapPlace {
   final String? transitStopType;
   final String? transitNetwork;
   final String? airportCode;
+
+  List<String> get openingHours => _openingHours ?? const <String>[];
 
   static Point? coordinateFromGeometry(Map<String?, Object?> geometry) {
     final rawCoordinates = geometry['coordinates'];
@@ -99,10 +105,12 @@ class SelectedMapPlace {
       longitude: details.longitude,
       latitude: details.latitude,
       address: details.formattedAddress,
-      placeId: details.placeId,
       rating: details.rating,
       reviewCount: details.userRatingCount,
       isOpenNow: details.isOpenNow,
+      openingHours: details.openingHours,
+      photoUrl: details.photoUrl,
+      photoAttribution: details.photoAttribution,
       category: details.types.isEmpty ? null : details.types.first,
     );
   }

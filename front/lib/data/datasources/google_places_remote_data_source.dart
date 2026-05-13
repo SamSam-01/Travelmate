@@ -26,7 +26,7 @@ class GooglePlacesRemoteDataSource {
       'suggestions.placePrediction.structuredFormat.secondaryText.text';
   static const String _detailsFieldMask =
       'id,formattedAddress,location,types,'
-      'rating,userRatingCount,regularOpeningHours';
+      'rating,userRatingCount,regularOpeningHours,photos';
 
   final String _apiKey;
   final GooglePlacesRequestExecutor _executor;
@@ -94,6 +94,7 @@ class GooglePlacesRemoteDataSource {
           'X-Goog-FieldMask': _detailsFieldMask,
         },
       ),
+      apiKey: _apiKey,
     );
   }
 

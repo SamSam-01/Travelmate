@@ -397,15 +397,16 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
             ),
-          MapPlaceSearchPanel(
-            controller: _searchController,
-            onClear: _clearSearch,
-            onSuggestionSelected: _selectSuggestion,
-            suggestions: _suggestions,
-            isEnabled: _isPlaceSearchEnabled,
-            isLoading: _isSearching || _isLoadingPlaceDetails,
-            errorMessage: _searchError,
-          ),
+          if (_selectedPlace == null)
+            MapPlaceSearchPanel(
+              controller: _searchController,
+              onClear: _clearSearch,
+              onSuggestionSelected: _selectSuggestion,
+              suggestions: _suggestions,
+              isEnabled: _isPlaceSearchEnabled,
+              isLoading: _isSearching || _isLoadingPlaceDetails,
+              errorMessage: _searchError,
+            ),
           MapPlaceDetailsSheet(
             place: _selectedPlace,
             onClose: () {

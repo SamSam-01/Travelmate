@@ -99,6 +99,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsPlaceDetailsClosed => 'Closed';
 
   @override
+  String get mapsPlaceDetailsOpeningHours => 'Opening hours';
+
+  @override
   String get mapsPlaceDetailsCategory => 'Category';
 
   @override

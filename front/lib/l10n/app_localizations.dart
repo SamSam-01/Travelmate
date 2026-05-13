@@ -272,6 +272,12 @@ abstract class AppLocalizations {
   /// **'Fermé'**
   String get mapsPlaceDetailsClosed;
 
+  /// No description provided for @mapsPlaceDetailsOpeningHours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Horaires d\'ouverture'**
+  String get mapsPlaceDetailsOpeningHours;
+
   /// No description provided for @mapsPlaceDetailsCategory.
   ///
   /// In fr, this message translates to:
