@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
+import 'package:front/screens/outings/widgets/create_outing_components.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/styles/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -86,7 +87,11 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
 
   Future<void> _submit() async {
     if (!_canSubmit) {
-      _showSnackBar('Complète toutes les étapes avant de confirmer.', isError: true);
+      showCrazerSnackBar(
+        context,
+        'Complète toutes les étapes avant de confirmer.',
+        isError: true,
+      );
       return;
     }
 
@@ -114,10 +119,14 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
       if (!mounted) return;
       Navigator.of(context).pop(outing);
     } on PostgrestException catch (error) {
-      if (mounted) _showSnackBar(error.message, isError: true);
+      if (mounted) showCrazerSnackBar(context, error.message, isError: true);
     } catch (_) {
       if (mounted) {
-        _showSnackBar('Impossible de créer la sortie planifiée.', isError: true);
+        showCrazerSnackBar(
+          context,
+          'Impossible de créer la sortie planifiée.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -128,68 +137,46 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
     }
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).snackBarTheme.backgroundColor,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Créer une sortie'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          children: [
-            _StepActionCard(
-              stepNumber: 1,
-              title: 'Détails',
-              summary: _detailsSummary(widget.users, _draft),
-              completed: _draft.title.isNotEmpty && _draft.selectedUserIds.isNotEmpty,
-              buttonLabel: 'Modifier les détails',
-              onPressed: _openDetailsStep,
-            ),
-            const SizedBox(height: 12),
-            _StepActionCard(
-              stepNumber: 2,
-              title: 'Quand ?',
-              summary: _draft.scheduledFor == null
-                  ? 'Aucune date définie.'
-                  : _formatDateTime(_draft.scheduledFor!),
-              completed: _draft.scheduledFor != null,
-              buttonLabel: 'Définir la date',
-              onPressed: _openWhenStep,
-            ),
-            const SizedBox(height: 12),
-            _StepActionCard(
-              stepNumber: 3,
-              title: 'Quelles activités ?',
-              summary: _activitiesSummary(widget.activities, _draft.selectedActivityIds),
-              completed: _draft.selectedActivityIds.isNotEmpty,
-              buttonLabel: 'Choisir les activités',
-              onPressed: _openActivitiesStep,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                style: _crazerFilledButtonStyle(),
-                onPressed: _saving ? null : _submit,
-                child: Text(_saving ? 'Création...' : 'Confirmer la sortie'),
-              ),
-            ),
-          ],
+    return CrazerStepScaffold(
+      title: 'Créer une sortie',
+      children: [
+        CrazerStepActionCard(
+          stepNumber: 1,
+          title: 'Détails',
+          summary: _detailsSummary(widget.users, _draft),
+          completed: _draft.title.isNotEmpty && _draft.selectedUserIds.isNotEmpty,
+          buttonLabel: 'Modifier les détails',
+          onPressed: _openDetailsStep,
         ),
-      ),
+        const SizedBox(height: 12),
+        CrazerStepActionCard(
+          stepNumber: 2,
+          title: 'Quand ?',
+          summary: _draft.scheduledFor == null
+              ? 'Aucune date définie.'
+              : _formatDateTime(_draft.scheduledFor!),
+          completed: _draft.scheduledFor != null,
+          buttonLabel: 'Définir la date',
+          onPressed: _openWhenStep,
+        ),
+        const SizedBox(height: 12),
+        CrazerStepActionCard(
+          stepNumber: 3,
+          title: 'Quelles activités ?',
+          summary: _activitiesSummary(widget.activities, _draft.selectedActivityIds),
+          completed: _draft.selectedActivityIds.isNotEmpty,
+          buttonLabel: 'Choisir les activités',
+          onPressed: _openActivitiesStep,
+        ),
+        const SizedBox(height: 16),
+        CrazerPrimaryButton(
+          height: 52,
+          label: _saving ? 'Création...' : 'Confirmer la sortie',
+          onPressed: _saving ? null : _submit,
+        ),
+      ],
     );
   }
 }
@@ -233,11 +220,11 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
   void _confirm() {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      _showSnackBar('Ajoute un titre.', isError: true);
+      showCrazerSnackBar(context, 'Ajoute un titre.', isError: true);
       return;
     }
     if (_selectedUserIds.isEmpty) {
-      _showSnackBar('Sélectionne au moins un ami.', isError: true);
+      showCrazerSnackBar(context, 'Sélectionne au moins un ami.', isError: true);
       return;
     }
 
@@ -250,112 +237,86 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
     );
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).snackBarTheme.backgroundColor,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Étape 1 — Détails'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          children: [
-            TextField(
-              controller: _titleController,
-              textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                labelText: 'Titre',
-                hintText: 'Ex. Week-end plage',
-              ),
+    return CrazerStepScaffold(
+      title: 'Étape 1 — Détails',
+      children: [
+        TextField(
+          controller: _titleController,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            labelText: 'Titre',
+            hintText: 'Ex. Week-end plage',
+          ),
+        ),
+        const SizedBox(height: 16),
+        SegmentedButton<OutingVisibility>(
+          style: ButtonStyle(
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return Colors.black;
+              }
+              return Theme.of(context).colorScheme.onSurface;
+            }),
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return CrazerColors.lime;
+              }
+              return Theme.of(context).colorScheme.surface;
+            }),
+          ),
+          segments: const <ButtonSegment<OutingVisibility>>[
+            ButtonSegment<OutingVisibility>(
+              value: OutingVisibility.private,
+              label: Text('Privée'),
+              icon: Icon(Icons.lock_outline),
             ),
-            const SizedBox(height: 16),
-            SegmentedButton<OutingVisibility>(
-              style: ButtonStyle(
-                foregroundColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return Colors.black;
-                  }
-                  return Theme.of(context).colorScheme.onSurface;
-                }),
-                backgroundColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return CrazerColors.lime;
-                  }
-                  return Theme.of(context).colorScheme.surface;
-                }),
-              ),
-              segments: const <ButtonSegment<OutingVisibility>>[
-                ButtonSegment<OutingVisibility>(
-                  value: OutingVisibility.private,
-                  label: Text('Privée'),
-                  icon: Icon(Icons.lock_outline),
-                ),
-                ButtonSegment<OutingVisibility>(
-                  value: OutingVisibility.public,
-                  label: Text('Publique'),
-                  icon: Icon(Icons.public),
-                ),
-              ],
-              selected: <OutingVisibility>{_visibility},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _visibility = selection.first;
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Amis participants',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.users
-                  .map(
-                    (user) => FilterChip(
-                      selected: _selectedUserIds.contains(user.id),
-                      label: Text(user.name),
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedUserIds.add(user.id);
-                          } else {
-                            _selectedUserIds.remove(user.id);
-                          }
-                        });
-                      },
-                    ),
-                  )
-                  .toList(growable: false),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                style: _crazerFilledButtonStyle(),
-                onPressed: _confirm,
-                child: const Text('Confirmer'),
-              ),
+            ButtonSegment<OutingVisibility>(
+              value: OutingVisibility.public,
+              label: Text('Publique'),
+              icon: Icon(Icons.public),
             ),
           ],
+          selected: <OutingVisibility>{_visibility},
+          onSelectionChanged: (selection) {
+            setState(() {
+              _visibility = selection.first;
+            });
+          },
         ),
-      ),
+        const SizedBox(height: 20),
+        Text(
+          'Amis participants',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: widget.users
+              .map(
+                (user) => FilterChip(
+                  selected: _selectedUserIds.contains(user.id),
+                  label: Text(user.name),
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedUserIds.add(user.id);
+                      } else {
+                        _selectedUserIds.remove(user.id);
+                      }
+                    });
+                  },
+                ),
+              )
+              .toList(growable: false),
+        ),
+        const SizedBox(height: 20),
+        CrazerPrimaryButton(label: 'Confirmer', onPressed: _confirm),
+      ],
     );
   }
 }
@@ -409,63 +370,31 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
 
   void _confirm() {
     if (_selectedDateTime == null) {
-      _showSnackBar('Choisis une date et une heure.', isError: true);
+      showCrazerSnackBar(context, 'Choisis une date et une heure.', isError: true);
       return;
     }
     Navigator.of(context).pop(_selectedDateTime);
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).snackBarTheme.backgroundColor,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Étape 2 — Quand ?'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          children: [
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: CrazerColors.lime,
-                side: BorderSide(
-                  color: CrazerColors.lime.withValues(alpha: 0.55),
-                ),
-              ),
-              onPressed: _pickDateTime,
-              icon: const Icon(Icons.calendar_month_outlined),
-              label: const Text('Choisir la date et l’heure'),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _selectedDateTime == null
-                  ? 'Aucune date sélectionnée.'
-                  : _formatDateTime(_selectedDateTime!),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                style: _crazerFilledButtonStyle(),
-                onPressed: _confirm,
-                child: const Text('Confirmer'),
-              ),
-            ),
-          ],
+    return CrazerStepScaffold(
+      title: 'Étape 2 — Quand ?',
+      children: [
+        CrazerOutlineButton(
+          label: 'Choisir la date et l’heure',
+          icon: Icons.calendar_month_outlined,
+          onPressed: _pickDateTime,
         ),
-      ),
+        const SizedBox(height: 12),
+        Text(
+          _selectedDateTime == null
+              ? 'Aucune date sélectionnée.'
+              : _formatDateTime(_selectedDateTime!),
+        ),
+        const SizedBox(height: 20),
+        CrazerPrimaryButton(label: 'Confirmer', onPressed: _confirm),
+      ],
     );
   }
 }
@@ -494,135 +423,41 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
 
   void _confirm() {
     if (_selectedActivityIds.isEmpty) {
-      _showSnackBar('Sélectionne au moins une activité.', isError: true);
+      showCrazerSnackBar(
+        context,
+        'Sélectionne au moins une activité.',
+        isError: true,
+      );
       return;
     }
     Navigator.of(context).pop(_selectedActivityIds);
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).snackBarTheme.backgroundColor,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Étape 3 — Activités'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          children: [
-            for (final activity in widget.activities)
-              CheckboxListTile(
-                value: _selectedActivityIds.contains(activity.id),
-                activeColor: CrazerColors.lime,
-                checkColor: Colors.black,
-                title: Text(activity.title),
-                subtitle: activity.subtitle.isEmpty ? null : Text(activity.subtitle),
-                onChanged: (selected) {
-                  setState(() {
-                    if (selected ?? false) {
-                      _selectedActivityIds.add(activity.id);
-                    } else {
-                      _selectedActivityIds.remove(activity.id);
-                    }
-                  });
-                },
-              ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                style: _crazerFilledButtonStyle(),
-                onPressed: _confirm,
-                child: const Text('Confirmer'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StepActionCard extends StatelessWidget {
-  const _StepActionCard({
-    required this.stepNumber,
-    required this.title,
-    required this.summary,
-    required this.completed,
-    required this.buttonLabel,
-    required this.onPressed,
-  });
-
-  final int stepNumber;
-  final String title;
-  final String summary;
-  final bool completed;
-  final String buttonLabel;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: CrazerColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: CrazerColors.border.withValues(alpha: 0.9)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Étape $stepNumber — $title',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                Icon(
-                  completed ? Icons.check_circle : Icons.pending_outlined,
-                  color: completed
-                      ? CrazerColors.lime
-                      : scheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(summary, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: CrazerColors.lime,
-                  side: BorderSide(
-                    color: CrazerColors.lime.withValues(alpha: 0.55),
-                  ),
-                ),
-                onPressed: onPressed,
-                child: Text(buttonLabel),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return CrazerStepScaffold(
+      title: 'Étape 3 — Activités',
+      children: [
+        for (final activity in widget.activities)
+          CheckboxListTile(
+            value: _selectedActivityIds.contains(activity.id),
+            activeColor: CrazerColors.lime,
+            checkColor: Colors.black,
+            title: Text(activity.title),
+            subtitle: activity.subtitle.isEmpty ? null : Text(activity.subtitle),
+            onChanged: (selected) {
+              setState(() {
+                if (selected ?? false) {
+                  _selectedActivityIds.add(activity.id);
+                } else {
+                  _selectedActivityIds.remove(activity.id);
+                }
+              });
+            },
+          ),
+        const SizedBox(height: 8),
+        CrazerPrimaryButton(label: 'Confirmer', onPressed: _confirm),
+      ],
     );
   }
 }
@@ -707,13 +542,4 @@ String _formatDateTime(DateTime value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$day/$month/${local.year} à $hour:$minute';
-}
-
-ButtonStyle _crazerFilledButtonStyle() {
-  return FilledButton.styleFrom(
-    backgroundColor: CrazerColors.lime,
-    foregroundColor: Colors.black,
-    disabledBackgroundColor: CrazerColors.lime.withValues(alpha: 0.4),
-    disabledForegroundColor: Colors.black.withValues(alpha: 0.65),
-  );
 }
