@@ -5,7 +5,7 @@ import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/maps/widgets/map_place_details_sheet.dart';
 
 void main() {
-  testWidgets('should show selection hint when no place is selected', (
+  testWidgets('should render nothing when no place is selected', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -16,14 +16,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Sélectionnez un lieu'), findsOneWidget);
-    expect(
-      find.text(
-        'Touchez un point d\'intérêt ou un libellé sur la carte pour afficher '
-        'ses informations.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.byType(SizedBox), findsOneWidget);
+    expect(find.byIcon(Icons.place_outlined), findsNothing);
   });
 
   testWidgets(

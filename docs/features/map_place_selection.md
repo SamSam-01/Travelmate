@@ -10,7 +10,7 @@ L'onglet Maps permet maintenant de toucher un point d'intérêt Mapbox ou un lib
 - La sélection d'un résultat Google recentre la carte et affiche uniquement les champs `Essentials` utiles: adresse, coordonnées et types.
 - Un tap sur une zone vide de la carte ferme la sélection courante.
 - Le bouton de fermeture du panneau efface aussi la sélection.
-- Si aucun lieu n'est sélectionné, un état d'aide invite l'utilisateur à toucher la carte.
+- Si aucun lieu n'est sélectionné, aucun panneau de détail n'est affiché.
 - Si certaines métadonnées sont absentes, seules les informations disponibles sont affichées.
 - Si `GOOGLE_PLACES_API_KEY` est absent, la carte reste utilisable mais la recherche Google est désactivée.
 
