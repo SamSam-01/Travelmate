@@ -25,4 +25,16 @@ void main() {
 
     expect(coordinate, isNull);
   });
+
+  test('should expose empty opening hours when constructed with null', () {
+    const place = SelectedMapPlace(
+      name: 'Le Barachois',
+      sourceLabel: 'Google Places',
+      longitude: 55.455000,
+      latitude: -20.878900,
+      openingHours: null,
+    );
+
+    expect(place.openingHours, isEmpty);
+  });
 }

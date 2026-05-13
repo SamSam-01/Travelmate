@@ -160,20 +160,14 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Transform.translate(
-                          offset: const Offset(-16, 0),
-                          child: SizedBox(
-                            width: MediaQuery.sizeOf(context).width,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(heroRadius),
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: heroHeight,
-                                child: MapPlaceHero(
-                                  place: selectedPlace,
-                                  aspectRatio: 16 / 9,
-                                ),
-                              ),
+                        SizedBox(
+                          width: double.infinity,
+                          height: heroHeight,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(heroRadius),
+                            child: MapPlaceHero(
+                              place: selectedPlace,
+                              aspectRatio: 16 / 9,
                             ),
                           ),
                         ),

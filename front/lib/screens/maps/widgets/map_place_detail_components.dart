@@ -40,6 +40,7 @@ class MapPlaceHero extends StatelessWidget {
               : Image.network(
                   place.photoUrl!,
                   fit: BoxFit.cover,
+                  alignment: Alignment.center,
                   errorBuilder: (_, __, ___) => const _HeroFallback(),
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) {

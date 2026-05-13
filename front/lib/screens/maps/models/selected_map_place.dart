@@ -22,7 +22,7 @@ class SelectedMapPlace {
     this.transitStopType,
     this.transitNetwork,
     this.airportCode,
-  }) : _openingHours = openingHours;
+  }) : openingHours = openingHours ?? const <String>[];
 
   final String name;
   final String sourceLabel;
@@ -32,7 +32,7 @@ class SelectedMapPlace {
   final double? rating;
   final int? reviewCount;
   final bool? isOpenNow;
-  final List<String>? _openingHours;
+  final List<String> openingHours;
   final String? photoUrl;
   final String? photoAttribution;
   final String? category;
@@ -42,8 +42,6 @@ class SelectedMapPlace {
   final String? transitStopType;
   final String? transitNetwork;
   final String? airportCode;
-
-  List<String> get openingHours => _openingHours ?? const <String>[];
 
   static Point? coordinateFromGeometry(Map<String?, Object?> geometry) {
     final rawCoordinates = geometry['coordinates'];
