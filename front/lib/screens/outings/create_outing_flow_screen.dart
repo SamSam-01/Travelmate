@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
 import 'package:front/services/planned_outing_service.dart';
+import 'package:front/styles/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CreateOutingFlowScreen extends StatefulWidget {
@@ -141,7 +142,10 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer une sortie')),
+      appBar: AppBar(
+        title: const Text('Créer une sortie'),
+        backgroundColor: Colors.transparent,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -178,6 +182,7 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
             SizedBox(
               height: 52,
               child: FilledButton(
+                style: _crazerFilledButtonStyle(),
                 onPressed: _saving ? null : _submit,
                 child: Text(_saving ? 'Création...' : 'Confirmer la sortie'),
               ),
@@ -259,7 +264,10 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Étape 1 — Détails')),
+      appBar: AppBar(
+        title: const Text('Étape 1 — Détails'),
+        backgroundColor: Colors.transparent,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -274,6 +282,20 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
             ),
             const SizedBox(height: 16),
             SegmentedButton<OutingVisibility>(
+              style: ButtonStyle(
+                foregroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Colors.black;
+                  }
+                  return Theme.of(context).colorScheme.onSurface;
+                }),
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return CrazerColors.lime;
+                  }
+                  return Theme.of(context).colorScheme.surface;
+                }),
+              ),
               segments: const <ButtonSegment<OutingVisibility>>[
                 ButtonSegment<OutingVisibility>(
                   value: OutingVisibility.private,
@@ -326,6 +348,7 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
             SizedBox(
               height: 50,
               child: FilledButton(
+                style: _crazerFilledButtonStyle(),
                 onPressed: _confirm,
                 child: const Text('Confirmer'),
               ),
@@ -406,12 +429,21 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Étape 2 — Quand ?')),
+      appBar: AppBar(
+        title: const Text('Étape 2 — Quand ?'),
+        backgroundColor: Colors.transparent,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
           children: [
             OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: CrazerColors.lime,
+                side: BorderSide(
+                  color: CrazerColors.lime.withValues(alpha: 0.55),
+                ),
+              ),
               onPressed: _pickDateTime,
               icon: const Icon(Icons.calendar_month_outlined),
               label: const Text('Choisir la date et l’heure'),
@@ -426,6 +458,7 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
             SizedBox(
               height: 50,
               child: FilledButton(
+                style: _crazerFilledButtonStyle(),
                 onPressed: _confirm,
                 child: const Text('Confirmer'),
               ),
@@ -481,7 +514,10 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Étape 3 — Activités')),
+      appBar: AppBar(
+        title: const Text('Étape 3 — Activités'),
+        backgroundColor: Colors.transparent,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -489,6 +525,8 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
             for (final activity in widget.activities)
               CheckboxListTile(
                 value: _selectedActivityIds.contains(activity.id),
+                activeColor: CrazerColors.lime,
+                checkColor: Colors.black,
                 title: Text(activity.title),
                 subtitle: activity.subtitle.isEmpty ? null : Text(activity.subtitle),
                 onChanged: (selected) {
@@ -505,6 +543,7 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
             SizedBox(
               height: 50,
               child: FilledButton(
+                style: _crazerFilledButtonStyle(),
                 onPressed: _confirm,
                 child: const Text('Confirmer'),
               ),
@@ -537,6 +576,11 @@ class _StepActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
+      color: CrazerColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: CrazerColors.border.withValues(alpha: 0.9)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -554,7 +598,9 @@ class _StepActionCard extends StatelessWidget {
                 ),
                 Icon(
                   completed ? Icons.check_circle : Icons.pending_outlined,
-                  color: completed ? Colors.green : scheme.onSurfaceVariant,
+                  color: completed
+                      ? CrazerColors.lime
+                      : scheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -563,7 +609,16 @@ class _StepActionCard extends StatelessWidget {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerLeft,
-              child: OutlinedButton(onPressed: onPressed, child: Text(buttonLabel)),
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: CrazerColors.lime,
+                  side: BorderSide(
+                    color: CrazerColors.lime.withValues(alpha: 0.55),
+                  ),
+                ),
+                onPressed: onPressed,
+                child: Text(buttonLabel),
+              ),
             ),
           ],
         ),
@@ -652,4 +707,13 @@ String _formatDateTime(DateTime value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$day/$month/${local.year} à $hour:$minute';
+}
+
+ButtonStyle _crazerFilledButtonStyle() {
+  return FilledButton.styleFrom(
+    backgroundColor: CrazerColors.lime,
+    foregroundColor: Colors.black,
+    disabledBackgroundColor: CrazerColors.lime.withValues(alpha: 0.4),
+    disabledForegroundColor: Colors.black.withValues(alpha: 0.65),
+  );
 }
