@@ -2,6 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/widgets/home_carousel.dart';
 
+enum OutingVisibility { private, public }
+
+extension OutingVisibilityX on OutingVisibility {
+  String get dbValue => switch (this) {
+    OutingVisibility.private => 'private',
+    OutingVisibility.public => 'public',
+  };
+
+  String get label => switch (this) {
+    OutingVisibility.private => 'Privée',
+    OutingVisibility.public => 'Publique',
+  };
+
+  static OutingVisibility fromValue(dynamic value) {
+    final normalized = value?.toString().trim().toLowerCase();
+    return switch (normalized) {
+      'public' => OutingVisibility.public,
+      _ => OutingVisibility.private,
+    };
+  }
+}
+
 class PlannedOutingUser {
   const PlannedOutingUser({required this.id, required this.name});
 
@@ -130,6 +152,8 @@ class PlannedOuting {
     required this.title,
     required this.users,
     required this.activities,
+    this.visibility = OutingVisibility.private,
+    this.scheduledFor,
     this.createdAt,
   });
 
@@ -137,6 +161,8 @@ class PlannedOuting {
   final String title;
   final List<PlannedOutingUser> users;
   final List<PlannedOutingActivity> activities;
+  final OutingVisibility visibility;
+  final DateTime? scheduledFor;
   final DateTime? createdAt;
 
   factory PlannedOuting.fromJson(Map<String, dynamic> json) {
@@ -145,6 +171,8 @@ class PlannedOuting {
       title: (json['title'] ?? '').toString(),
       users: _parseUsers(json['users'] ?? json['participants']),
       activities: _parseActivities(json['activities'] ?? json['itinerary']),
+      visibility: OutingVisibilityX.fromValue(json['visibility']),
+      scheduledFor: DateTime.tryParse((json['scheduled_for'] ?? '').toString()),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()),
     );
   }
@@ -180,7 +208,11 @@ class PlannedOuting {
     return users.any((user) => user.id == normalizedUserId);
   }
 
-  Map<String, dynamic> toInsertJson() => {'title': title};
+  Map<String, dynamic> toInsertJson() => {
+    'title': title,
+    'visibility': visibility.dbValue,
+    'scheduled_for': scheduledFor?.toIso8601String(),
+  };
 
   HomeCarouselItem toCarouselItem() {
     final participantsLabel = users.isEmpty

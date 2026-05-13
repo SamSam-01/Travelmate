@@ -2,6 +2,8 @@ import 'package:front/commons.dart';
 import 'package:front/main.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
+import 'package:front/main.dart';
+import 'package:front/screens/outings/create_outing_flow_screen.dart';
 import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/services/user_service.dart';
@@ -71,14 +73,13 @@ class _OutingsScreenState extends State<OutingsScreen> {
     );
   }
 
-  Future<void> _openCreateSheet(_OutingsData data) async {
-    final createdOuting = await showModalBottomSheet<PlannedOuting>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => _PlannedOutingFormSheet(
-        users: data.users,
-        activities: data.activities,
+  Future<void> _openCreateFlow(_OutingsData data) async {
+    final createdOuting = await Navigator.of(context).push<PlannedOuting>(
+      MaterialPageRoute(
+        builder: (_) => CreateOutingFlowScreen(
+          users: data.users,
+          activities: data.activities,
+        ),
       ),
     );
 
@@ -88,6 +89,19 @@ class _OutingsScreenState extends State<OutingsScreen> {
 
     _showSnackBar('Sortie "${createdOuting.title}" créée.');
     await _refresh();
+  }
+
+  String _formatScheduledFor(DateTime? scheduledFor) {
+    if (scheduledFor == null) {
+      return 'Date non définie';
+    }
+
+    final date = scheduledFor.toLocal();
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return 'Prévue le $day/$month/${date.year} à $hour:$minute';
   }
 
   String _formatCreatedAt(DateTime? createdAt) {
@@ -145,7 +159,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
                         onPressed:
                             (data.users.isEmpty || data.activities.isEmpty)
                             ? null
-                            : () => _openCreateSheet(data),
+                            : () => _openCreateFlow(data),
                         icon: const Icon(Icons.add),
                         label: const Text(
                           'Créer une sortie',
@@ -159,13 +173,16 @@ class _OutingsScreenState extends State<OutingsScreen> {
                     else if (data.activities.isEmpty)
                       _EmptyActivitiesHint(onRetry: _refresh)
                     else if (outings.isEmpty)
-                      _EmptyOutingsState(onCreate: () => _openCreateSheet(data))
+                      _EmptyOutingsState(onCreate: () => _openCreateFlow(data))
                     else
                       ...outings.map(
                         (outing) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _PlannedOutingCard(
                             outing: outing,
+                            scheduledForLabel: _formatScheduledFor(
+                              outing.scheduledFor,
+                            ),
                             createdAtLabel: _formatCreatedAt(outing.createdAt),
                           ),
                         ),
@@ -184,10 +201,12 @@ class _OutingsScreenState extends State<OutingsScreen> {
 class _PlannedOutingCard extends StatelessWidget {
   const _PlannedOutingCard({
     required this.outing,
+    required this.scheduledForLabel,
     required this.createdAtLabel,
   });
 
   final PlannedOuting outing;
+  final String scheduledForLabel;
   final String createdAtLabel;
 
   @override
@@ -196,13 +215,18 @@ class _PlannedOutingCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+      color: CrazerColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: CrazerColors.border.withValues(alpha: 0.85)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -213,95 +237,143 @@ class _PlannedOutingCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        createdAtLabel,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _InfoPill(
+                            icon: Icons.calendar_month_outlined,
+                            label: scheduledForLabel,
+                            accent: true,
+                          ),
+                          _InfoPill(
+                            icon: Icons.schedule_outlined,
+                            label: createdAtLabel,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.event_available_outlined,
-                  color: CrazerColors.lime,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CrazerColors.lime.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.event_available_outlined,
+                    color: CrazerColors.lime,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _InfoPill(
+                  icon: outing.visibility == OutingVisibility.public
+                      ? Icons.public
+                      : Icons.lock_outline,
+                  label: 'Visibilité ${outing.visibility.label}',
+                ),
+                _InfoPill(
+                  icon: Icons.groups_2_outlined,
+                  label:
+                      '${outing.users.length} participant${outing.users.length > 1 ? 's' : ''}',
+                ),
+                _InfoPill(
+                  icon: Icons.local_activity_outlined,
+                  label:
+                      '${outing.activities.length} activité${outing.activities.length > 1 ? 's' : ''}',
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              'Utilisateurs',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurfaceVariant,
-              ),
+            _SectionLabel(
+              icon: Icons.people_alt_outlined,
+              title: 'Participants',
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: outing.users.isEmpty
-                  ? const <Widget>[Chip(label: Text('Aucun utilisateur'))]
-                  : outing.users
-                        .map(
-                          (user) => Chip(
-                            avatar: CircleAvatar(
-                              child: Text(_initials(user.name)),
-                            ),
-                            label: Text(user.name),
+            const SizedBox(height: 10),
+            if (outing.users.isEmpty)
+              _EmptyVisualHint(
+                icon: Icons.person_off_outlined,
+                label: 'Aucun participant',
+              )
+            else
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: outing.users
+                    .map(
+                      (user) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.32,
                           ),
-                        )
-                        .toList(growable: false),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Activités avec horaire',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: scheme.outlineVariant.withValues(
+                              alpha: 0.45,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: CrazerColors.lime.withValues(
+                                alpha: 0.2,
+                              ),
+                              child: Text(
+                                _initials(user.name),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(user.name),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
+            const SizedBox(height: 16),
+            _SectionLabel(
+              icon: Icons.route_outlined,
+              title: 'Programme des activités',
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             if (outing.activities.isEmpty)
-              const Text('Aucune activité renseignée')
+              _EmptyVisualHint(
+                icon: Icons.event_busy_outlined,
+                label: 'Aucune activité renseignée',
+              )
             else
               Column(
                 children: [
-                  for (final activity in outing.activities)
+                  for (var index = 0; index < outing.activities.length; index++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 85,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                              horizontal: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: CrazerColors.lime.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              activity.time.isEmpty
-                                  ? '—:—'
-                                  : activity.time.replaceAll(' ', '\n'),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              activity.title,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        ],
+                      child: _ActivityVisualItem(
+                        title: outing.activities[index].title,
+                        time: outing.activities[index].time,
+                        isLast: index == outing.activities.length - 1,
                       ),
                     ),
                 ],
@@ -323,6 +395,187 @@ class _PlannedOutingCard extends StatelessWidget {
         value.isEmpty ? '?' : value[0].toUpperCase();
     if (parts.length == 1) return initial(parts.first);
     return '${initial(parts.first)}${initial(parts.last)}';
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: CrazerColors.lime),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({
+    required this.icon,
+    required this.label,
+    this.accent = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: accent
+            ? CrazerColors.lime.withValues(alpha: 0.16)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: accent ? CrazerColors.lime : scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyVisualHint extends StatelessWidget {
+  const _EmptyVisualHint({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityVisualItem extends StatelessWidget {
+  const _ActivityVisualItem({
+    required this.title,
+    required this.time,
+    required this.isLast,
+  });
+
+  final String title;
+  final String time;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          child: Column(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: CrazerColors.lime,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              if (!isLast)
+                Container(
+                  width: 2,
+                  height: 34,
+                  color: CrazerColors.lime.withValues(alpha: 0.4),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.45),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CrazerColors.lime.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    time.isEmpty ? '—:—' : time,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -351,7 +604,7 @@ class _EmptyOutingsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Crée une sortie avec un titre, des utilisateurs et des activités horodatées.',
+              'Crée une sortie avec un titre, des amis participants, une date et des activités.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
