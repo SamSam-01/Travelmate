@@ -66,6 +66,9 @@ void main() {
     WidgetTester tester,
   ) async {
     var didClose = false;
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
       _buildLocalizedApp(

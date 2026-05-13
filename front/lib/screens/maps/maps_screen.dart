@@ -347,8 +347,6 @@ class _MapsScreenState extends State<MapsScreen> {
 
   double get _searchOverlayOpacity => 1 - _sheetExpansionProgress.clamp(0, 1);
 
-  double get _searchOverlayOffsetY => -40 * _sheetExpansionProgress.clamp(0, 1);
-
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -432,19 +430,16 @@ class _MapsScreenState extends State<MapsScreen> {
           ),
           IgnorePointer(
             ignoring: _isPlaceDetailsExpanded,
-            child: Transform.translate(
-              offset: Offset(0, _searchOverlayOffsetY),
-              child: Opacity(
-                opacity: _searchOverlayOpacity,
-                child: MapPlaceSearchPanel(
-                  controller: _searchController,
-                  onClear: _clearSearch,
-                  onSuggestionSelected: _selectSuggestion,
-                  suggestions: _suggestions,
-                  isEnabled: _isPlaceSearchEnabled,
-                  isLoading: _isSearching || _isLoadingPlaceDetails,
-                  errorMessage: _searchError,
-                ),
+            child: Opacity(
+              opacity: _searchOverlayOpacity,
+              child: MapPlaceSearchPanel(
+                controller: _searchController,
+                onClear: _clearSearch,
+                onSuggestionSelected: _selectSuggestion,
+                suggestions: _suggestions,
+                isEnabled: _isPlaceSearchEnabled,
+                isLoading: _isSearching || _isLoadingPlaceDetails,
+                errorMessage: _searchError,
               ),
             ),
           ),

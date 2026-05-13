@@ -25,8 +25,8 @@ class MapPlaceDetailsSheet extends StatefulWidget {
 }
 
 class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
-  static const double _collapsedSize = 0.25;
-  static const double _initialSize = 0.30;
+  static const double _collapsedSize = 0.34;
+  static const double _initialSize = 0.40;
   static const double _expandedSize = 1.0;
   static const double _expandedThreshold = 0.55;
 
@@ -111,7 +111,7 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
           0.0,
           1.0,
         );
-    final heroHeight = lerpDouble(96, 260, expansionProgress)!;
+    final heroHeight = lerpDouble(180, 280, expansionProgress)!;
     final heroRadius = lerpDouble(20, 0, expansionProgress)!;
 
     return DraggableScrollableSheet(
