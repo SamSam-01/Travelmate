@@ -112,7 +112,7 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
           1.0,
         );
     final heroHeight = lerpDouble(228, 280, expansionProgress)!;
-    final heroRadius = lerpDouble(20, 0, expansionProgress)!;
+    final heroRadius = lerpDouble(20, 20, expansionProgress)!;
 
     return DraggableScrollableSheet(
       controller: _sheetController,
