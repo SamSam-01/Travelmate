@@ -102,6 +102,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapsPlaceDetailsOpeningHours => 'Horaires d\'ouverture';
 
   @override
+  String get mapsPlaceDetailsMoreDetails => 'Voir plus de détails';
+
+  @override
   String get mapsPlaceDetailsCategory => 'Catégorie';
 
   @override

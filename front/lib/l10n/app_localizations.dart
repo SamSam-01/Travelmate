@@ -278,6 +278,12 @@ abstract class AppLocalizations {
   /// **'Horaires d\'ouverture'**
   String get mapsPlaceDetailsOpeningHours;
 
+  /// No description provided for @mapsPlaceDetailsMoreDetails.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir plus de détails'**
+  String get mapsPlaceDetailsMoreDetails;
+
   /// No description provided for @mapsPlaceDetailsCategory.
   ///
   /// In fr, this message translates to:
