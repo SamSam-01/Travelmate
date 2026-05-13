@@ -8,8 +8,10 @@ L'onglet Maps permet maintenant de toucher un point d'intérêt Mapbox ou un lib
 - Un tap sur un libellé de lieu affiche la même fiche compacte avec les informations disponibles.
 - Une recherche Google Places ne se déclenche qu'après 2 caractères et un debounce pour limiter le nombre d'appels facturables.
 - La sélection d'un résultat Google recentre la carte et affiche une fiche compacte avec photo principale, note, statut ouvert/fermé, catégorie et adresse.
-- La barre de recherche reste affichée en haut, même quand un lieu est sélectionné.
-- Un swipe vers le haut sur la fiche compacte, ou un tap sur l'action dédiée, agrandit la fiche avec une animation native de bottom sheet.
+- La barre de recherche reste affichée au-dessus de la carte tant que la fiche n'est pas largement ouverte.
+- Quand la fiche monte, la barre de recherche se décale et s'efface progressivement pour suivre visuellement l'expansion du sheet.
+- L'aperçu compact s'arrête à l'adresse du lieu. Les détails longs n'apparaissent qu'après expansion.
+- L'image principale occupe toute la largeur visible du sheet dès l'aperçu.
 - Un swipe vers le bas sur la fiche agrandie la réduit à nouveau, sans effet de changement de page.
 - Un tap sur une zone vide de la carte ferme la sélection courante.
 - Le bouton de fermeture du panneau efface aussi la sélection.

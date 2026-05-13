@@ -57,7 +57,6 @@ void main() {
     expect(find.text('4.6 (2087)'), findsOneWidget);
     expect(find.text('Ouvert'), findsOneWidget);
     expect(find.text('13 Rue d\'Amsterdam, 75008 Paris'), findsOneWidget);
-    expect(find.text('Voir plus de détails'), findsOneWidget);
     expect(find.text('Google Places'), findsNothing);
     expect(find.text('lundi: 05:00-01:15'), findsNothing);
     expect(find.text('Photo: John Smith'), findsOneWidget);
@@ -96,6 +95,7 @@ void main() {
     WidgetTester tester,
   ) async {
     var isExpanded = false;
+    var expansionProgress = 0.0;
 
     await tester.pumpWidget(
       _buildLocalizedApp(
@@ -113,6 +113,9 @@ void main() {
             onExpandedChanged: (value) {
               isExpanded = value;
             },
+            onExpansionProgressChanged: (value) {
+              expansionProgress = value;
+            },
           ),
         ),
       ),
@@ -121,6 +124,7 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
     await tester.pumpAndSettle();
 
+    expect(expansionProgress, greaterThan(0.5));
     expect(isExpanded, isTrue);
     expect(find.text('Google Places'), findsOneWidget);
     expect(find.text('lundi: 09:00-22:00'), findsOneWidget);

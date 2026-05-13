@@ -48,6 +48,7 @@ class _MapsScreenState extends State<MapsScreen> {
   bool _isSearching = false;
   bool _isLoadingPlaceDetails = false;
   bool _isPlaceDetailsExpanded = false;
+  double _sheetExpansionProgress = 0;
   String? _searchError;
   String? _searchSessionToken;
   int _searchVersion = 0;
@@ -340,8 +341,13 @@ class _MapsScreenState extends State<MapsScreen> {
     setState(() {
       _selectedPlace = null;
       _isPlaceDetailsExpanded = false;
+      _sheetExpansionProgress = 0;
     });
   }
+
+  double get _searchOverlayOpacity => 1 - _sheetExpansionProgress.clamp(0, 1);
+
+  double get _searchOverlayOffsetY => -40 * _sheetExpansionProgress.clamp(0, 1);
 
   @override
   Widget build(BuildContext context) {
@@ -413,17 +419,35 @@ class _MapsScreenState extends State<MapsScreen> {
                 _isPlaceDetailsExpanded = isExpanded;
               });
             },
+            onExpansionProgressChanged: (progress) {
+              if (!mounted ||
+                  (_sheetExpansionProgress - progress).abs() < 0.01) {
+                return;
+              }
+
+              setState(() {
+                _sheetExpansionProgress = progress;
+              });
+            },
           ),
-          if (!_isPlaceDetailsExpanded)
-            MapPlaceSearchPanel(
-              controller: _searchController,
-              onClear: _clearSearch,
-              onSuggestionSelected: _selectSuggestion,
-              suggestions: _suggestions,
-              isEnabled: _isPlaceSearchEnabled,
-              isLoading: _isSearching || _isLoadingPlaceDetails,
-              errorMessage: _searchError,
+          IgnorePointer(
+            ignoring: _isPlaceDetailsExpanded,
+            child: Transform.translate(
+              offset: Offset(0, _searchOverlayOffsetY),
+              child: Opacity(
+                opacity: _searchOverlayOpacity,
+                child: MapPlaceSearchPanel(
+                  controller: _searchController,
+                  onClear: _clearSearch,
+                  onSuggestionSelected: _selectSuggestion,
+                  suggestions: _suggestions,
+                  isEnabled: _isPlaceSearchEnabled,
+                  isLoading: _isSearching || _isLoadingPlaceDetails,
+                  errorMessage: _searchError,
+                ),
+              ),
             ),
+          ),
         ],
       ),
     );

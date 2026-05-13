@@ -11,12 +11,14 @@ class MapPlaceDetailsSheet extends StatefulWidget {
     required this.place,
     required this.onClose,
     this.onExpandedChanged,
+    this.onExpansionProgressChanged,
     super.key,
   });
 
   final SelectedMapPlace? place;
   final VoidCallback onClose;
   final ValueChanged<bool>? onExpandedChanged;
+  final ValueChanged<double>? onExpansionProgressChanged;
 
   @override
   State<MapPlaceDetailsSheet> createState() => _MapPlaceDetailsSheetState();
@@ -83,21 +85,16 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
       widget.onExpandedChanged?.call(nextExpanded);
     }
 
+    final nextProgress =
+        ((nextSize - _initialSize) / (_expandedSize - _initialSize)).clamp(
+          0.0,
+          1.0,
+        );
+    widget.onExpansionProgressChanged?.call(nextProgress);
+
     setState(() {
       _sheetSize = nextSize;
     });
-  }
-
-  Future<void> _expandSheet() async {
-    if (!_sheetController.isAttached) {
-      return;
-    }
-
-    await _sheetController.animateTo(
-      _expandedSize,
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   @override
@@ -163,14 +160,20 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(heroRadius),
+                        Transform.translate(
+                          offset: const Offset(-16, 0),
                           child: SizedBox(
-                            width: double.infinity,
-                            height: heroHeight,
-                            child: MapPlaceHero(
-                              place: selectedPlace,
-                              aspectRatio: 16 / 9,
+                            width: MediaQuery.sizeOf(context).width,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(heroRadius),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: heroHeight,
+                                child: MapPlaceHero(
+                                  place: selectedPlace,
+                                  aspectRatio: 16 / 9,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -251,39 +254,6 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                                   color: CrazerColors.textSecondary,
                                   height: 1.35,
                                 ),
-                          ),
-                        ],
-                        if (!detailsVisible) ...[
-                          const SizedBox(height: 14),
-                          InkWell(
-                            onTap: _expandSheet,
-                            borderRadius: BorderRadius.circular(16),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 6,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.keyboard_arrow_up_rounded,
-                                    color: CrazerColors.lime,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    localizations.mapsPlaceDetailsMoreDetails,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(
-                                          color: CrazerColors.lime,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                         ],
                         if (detailsVisible &&
