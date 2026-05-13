@@ -5,17 +5,15 @@ import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/maps/widgets/map_place_details_sheet.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   testWidgets('should render nothing when no place is selected', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
       _buildLocalizedApp(
         child: const Scaffold(
-          body: MapPlaceDetailsSheet(
-            place: null,
-            onClose: _noop,
-            onExpand: _noop,
-          ),
+          body: MapPlaceDetailsSheet(place: null, onClose: _noop),
         ),
       ),
     );
@@ -49,7 +47,6 @@ void main() {
               photoUrl: 'https://example.com/place-photo.jpg',
             ),
             onClose: _noop,
-            onExpand: _noop,
           ),
         ),
       ),
@@ -84,7 +81,6 @@ void main() {
             onClose: () {
               didClose = true;
             },
-            onExpand: _noop,
           ),
         ),
       ),
@@ -96,34 +92,32 @@ void main() {
     expect(didClose, isTrue);
   });
 
-  testWidgets('should call onExpand when more details is tapped', (
+  testWidgets('should reveal extended details when more details is tapped', (
     WidgetTester tester,
   ) async {
-    var didExpand = false;
-
     await tester.pumpWidget(
       _buildLocalizedApp(
         child: Scaffold(
           body: MapPlaceDetailsSheet(
             place: const SelectedMapPlace(
               name: 'Le Barachois',
-              sourceLabel: 'Lieu',
+              sourceLabel: 'Google Places',
               longitude: 55.455000,
               latitude: -20.878900,
+              address: 'Boulevard Lancastel, Saint-Denis',
+              openingHours: <String>['lundi: 09:00-22:00'],
             ),
             onClose: _noop,
-            onExpand: () {
-              didExpand = true;
-            },
           ),
         ),
       ),
     );
 
-    await tester.tap(find.text('Voir plus de détails'));
-    await tester.pump();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+    await tester.pumpAndSettle();
 
-    expect(didExpand, isTrue);
+    expect(find.text('Google Places'), findsOneWidget);
+    expect(find.text('lundi: 09:00-22:00'), findsOneWidget);
   });
 }
 

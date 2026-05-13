@@ -11,7 +11,6 @@ import 'package:front/domain/repositories/place_search_repository.dart';
 import 'package:front/domain/usecases/get_place_details_use_case.dart';
 import 'package:front/domain/usecases/search_place_suggestions_use_case.dart';
 import 'package:front/l10n/app_localizations.dart';
-import 'package:front/screens/maps/map_place_details_page.dart';
 import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/maps/widgets/map_place_details_sheet.dart';
 import 'package:front/screens/maps/widgets/map_place_search_panel.dart';
@@ -342,19 +341,6 @@ class _MapsScreenState extends State<MapsScreen> {
     });
   }
 
-  Future<void> _openSelectedPlaceDetails() async {
-    final selectedPlace = _selectedPlace;
-    if (selectedPlace == null || !mounted) {
-      return;
-    }
-
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MapPlaceDetailsPage(place: selectedPlace),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -411,22 +397,20 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
             ),
-          if (_selectedPlace == null)
-            MapPlaceSearchPanel(
-              controller: _searchController,
-              onClear: _clearSearch,
-              onSuggestionSelected: _selectSuggestion,
-              suggestions: _suggestions,
-              isEnabled: _isPlaceSearchEnabled,
-              isLoading: _isSearching || _isLoadingPlaceDetails,
-              errorMessage: _searchError,
-            ),
           MapPlaceDetailsSheet(
             place: _selectedPlace,
             onClose: () {
               _clearSelection();
             },
-            onExpand: _openSelectedPlaceDetails,
+          ),
+          MapPlaceSearchPanel(
+            controller: _searchController,
+            onClear: _clearSearch,
+            onSuggestionSelected: _selectSuggestion,
+            suggestions: _suggestions,
+            isEnabled: _isPlaceSearchEnabled,
+            isLoading: _isSearching || _isLoadingPlaceDetails,
+            errorMessage: _searchError,
           ),
         ],
       ),
