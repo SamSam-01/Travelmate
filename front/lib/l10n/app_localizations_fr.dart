@@ -84,6 +84,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapsPlaceDetailsPlaceId => 'Place ID';
 
   @override
+  String get mapsPlaceDetailsRating => 'Note';
+
+  @override
+  String get mapsPlaceDetailsReviewCount => 'Avis';
+
+  @override
+  String get mapsPlaceDetailsOpenNow => 'Statut';
+
+  @override
+  String get mapsPlaceDetailsOpen => 'Ouvert';
+
+  @override
+  String get mapsPlaceDetailsClosed => 'Fermé';
+
+  @override
   String get mapsPlaceDetailsCategory => 'Catégorie';
 
   @override

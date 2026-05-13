@@ -32,6 +32,9 @@ void main() {
                 sourceLabel: 'Point d\'intérêt',
                 longitude: 2.325551,
                 latitude: 48.875247,
+                rating: 4.6,
+                reviewCount: 2087,
+                isOpenNow: true,
                 category: 'station',
                 group: 'transit',
                 icon: 'rail',
@@ -50,6 +53,9 @@ void main() {
       expect(find.text('Point d\'intérêt'), findsOneWidget);
       expect(find.text('2.325551'), findsOneWidget);
       expect(find.text('48.875247'), findsOneWidget);
+      expect(find.text('4.6'), findsOneWidget);
+      expect(find.text('2087'), findsOneWidget);
+      expect(find.text('Ouvert'), findsOneWidget);
       expect(find.text('station'), findsNWidgets(2));
       expect(find.text('transit'), findsOneWidget);
       expect(find.text('rail'), findsNWidgets(2));

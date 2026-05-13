@@ -10,6 +10,9 @@ class SelectedMapPlace {
     required this.latitude,
     this.address,
     this.placeId,
+    this.rating,
+    this.reviewCount,
+    this.isOpenNow,
     this.category,
     this.group,
     this.icon,
@@ -25,6 +28,9 @@ class SelectedMapPlace {
   final double latitude;
   final String? address;
   final String? placeId;
+  final double? rating;
+  final int? reviewCount;
+  final bool? isOpenNow;
   final String? category;
   final String? group;
   final String? icon;
@@ -94,6 +100,9 @@ class SelectedMapPlace {
       latitude: details.latitude,
       address: details.formattedAddress,
       placeId: details.placeId,
+      rating: details.rating,
+      reviewCount: details.userRatingCount,
+      isOpenNow: details.isOpenNow,
       category: details.types.isEmpty ? null : details.types.first,
     );
   }

@@ -30,6 +30,9 @@ void main() {
                   'longitude': 2.3522,
                 },
                 'types': <Object?>['museum'],
+                'rating': 4.7,
+                'userRatingCount': 12843,
+                'regularOpeningHours': <String, Object?>{'openNow': true},
               };
             },
       );
@@ -47,10 +50,14 @@ void main() {
       expect(recordedUri.queryParameters['regionCode'], 'FR');
       expect(
         recordedHeaders['X-Goog-FieldMask'],
-        'id,formattedAddress,location,types',
+        'id,formattedAddress,location,types,'
+        'rating,userRatingCount,regularOpeningHours',
       );
       expect(details.formattedAddress, 'Paris, France');
       expect(details.types, <String>['museum']);
+      expect(details.rating, 4.7);
+      expect(details.userRatingCount, 12843);
+      expect(details.isOpenNow, isTrue);
     },
   );
 }

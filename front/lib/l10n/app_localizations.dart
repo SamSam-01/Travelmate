@@ -242,6 +242,36 @@ abstract class AppLocalizations {
   /// **'Place ID'**
   String get mapsPlaceDetailsPlaceId;
 
+  /// No description provided for @mapsPlaceDetailsRating.
+  ///
+  /// In fr, this message translates to:
+  /// **'Note'**
+  String get mapsPlaceDetailsRating;
+
+  /// No description provided for @mapsPlaceDetailsReviewCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Avis'**
+  String get mapsPlaceDetailsReviewCount;
+
+  /// No description provided for @mapsPlaceDetailsOpenNow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Statut'**
+  String get mapsPlaceDetailsOpenNow;
+
+  /// No description provided for @mapsPlaceDetailsOpen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvert'**
+  String get mapsPlaceDetailsOpen;
+
+  /// No description provided for @mapsPlaceDetailsClosed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermé'**
+  String get mapsPlaceDetailsClosed;
+
   /// No description provided for @mapsPlaceDetailsCategory.
   ///
   /// In fr, this message translates to:

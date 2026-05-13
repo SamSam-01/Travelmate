@@ -24,7 +24,9 @@ class GooglePlacesRemoteDataSource {
       'suggestions.placePrediction.text.text,'
       'suggestions.placePrediction.structuredFormat.mainText.text,'
       'suggestions.placePrediction.structuredFormat.secondaryText.text';
-  static const String _detailsFieldMask = 'id,formattedAddress,location,types';
+  static const String _detailsFieldMask =
+      'id,formattedAddress,location,types,'
+      'rating,userRatingCount,regularOpeningHours';
 
   final String _apiKey;
   final GooglePlacesRequestExecutor _executor;

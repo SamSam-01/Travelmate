@@ -106,6 +106,27 @@ class MapPlaceDetailsSheet extends StatelessWidget {
                   label: AppLocalizations.of(context)!.mapsPlaceDetailsLatitude,
                   value: place!.latitude.toStringAsFixed(_coordinatePrecision),
                 ),
+                if (place!.rating != null)
+                  _DetailRow(
+                    label: AppLocalizations.of(context)!.mapsPlaceDetailsRating,
+                    value: place!.rating!.toStringAsFixed(1),
+                  ),
+                if (place!.reviewCount != null)
+                  _DetailRow(
+                    label: AppLocalizations.of(
+                      context,
+                    )!.mapsPlaceDetailsReviewCount,
+                    value: place!.reviewCount.toString(),
+                  ),
+                if (place!.isOpenNow != null)
+                  _DetailRow(
+                    label: AppLocalizations.of(
+                      context,
+                    )!.mapsPlaceDetailsOpenNow,
+                    value: place!.isOpenNow!
+                        ? AppLocalizations.of(context)!.mapsPlaceDetailsOpen
+                        : AppLocalizations.of(context)!.mapsPlaceDetailsClosed,
+                  ),
                 if (_hasValue(place!.address))
                   _DetailRow(
                     label: AppLocalizations.of(
