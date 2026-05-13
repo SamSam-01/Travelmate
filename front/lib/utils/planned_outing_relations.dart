@@ -19,7 +19,6 @@ List<PlannedOuting> buildPlannedOutingsFromRelations({
           activities:
               activitiesByOutingId[(row['id'] ?? '').toString()] ??
               const <PlannedOutingActivity>[],
-          visibility: OutingVisibilityX.fromValue(row['visibility']),
           scheduledFor: DateTime.tryParse(
             (row['scheduled_for'] ?? '').toString(),
           ),

@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/widgets/home_carousel.dart';
 
-enum OutingVisibility {
-  private,
-  public,
-}
+enum OutingVisibility { private, public }
 
 extension OutingVisibilityX on OutingVisibility {
   String get dbValue => switch (this) {
@@ -213,7 +210,6 @@ class PlannedOuting {
 
   Map<String, dynamic> toInsertJson() => {
     'title': title,
-    'visibility': visibility.dbValue,
     'scheduled_for': scheduledFor?.toIso8601String(),
   };
 

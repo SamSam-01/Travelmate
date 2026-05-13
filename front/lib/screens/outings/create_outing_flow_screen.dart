@@ -106,7 +106,6 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
         title: _draft.title,
         users: selectedUsers,
         activities: selectedActivities,
-        visibility: _draft.visibility,
         scheduledFor: _draft.scheduledFor,
       );
 
