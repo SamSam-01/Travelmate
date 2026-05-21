@@ -9,7 +9,9 @@ import 'package:front/presentation/providers/friendship_providers.dart';
 import 'package:front/presentation/widgets/friend_request_widget.dart';
 
 class FriendsPage extends ConsumerWidget {
-  const FriendsPage({super.key});
+  const FriendsPage({super.key, this.initialTabIndex = 0});
+
+  final int initialTabIndex;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,6 +20,7 @@ class FriendsPage extends ConsumerWidget {
 
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
           title: Text(localizations.friendsTitle),
