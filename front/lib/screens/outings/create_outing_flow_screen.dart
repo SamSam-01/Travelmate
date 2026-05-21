@@ -239,6 +239,11 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final otherUsers = widget.users
+        .where((user) => user.id != currentUserId)
+        .toList(growable: false);
+
     return CrazerStepScaffold(
       title: 'Étape 1 — Détails',
       children: [
@@ -296,7 +301,7 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: widget.users
+          children: otherUsers
               .map(
                 (user) => FilterChip(
                   selected: _selectedUserIds.contains(user.id),
