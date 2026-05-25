@@ -4,8 +4,10 @@ import 'package:front/core/constants/app_spacing.dart';
 import 'package:front/domain/entities/friend_request.dart';
 import 'package:front/domain/entities/user_profile.dart';
 import 'package:front/l10n/app_localizations.dart';
+import 'package:front/presentation/pages/friend_profile_page.dart';
 import 'package:front/presentation/pages/user_search_page.dart';
 import 'package:front/presentation/providers/friendship_providers.dart';
+import 'package:front/presentation/widgets/friend_list_profile_card.dart';
 import 'package:front/presentation/widgets/friend_request_widget.dart';
 
 class FriendsPage extends ConsumerWidget {
@@ -17,6 +19,10 @@ class FriendsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
     final actionsState = ref.watch(friendshipActionsProvider);
+    final friendsAsync = ref.watch(friendsProvider);
+    final requestsAsync = ref.watch(pendingRequestsProvider);
+    final friendCount = friendsAsync.valueOrNull?.length;
+    final requestCount = requestsAsync.valueOrNull?.length;
 
     return DefaultTabController(
       length: 2,
@@ -26,11 +32,9 @@ class FriendsPage extends ConsumerWidget {
           title: Text(localizations.friendsTitle),
           actions: [
             IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const UserSearchPage()),
-                );
-              },
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UserSearchPage()),
+              ),
               icon: const Icon(Icons.person_add_alt_1_outlined),
               tooltip: localizations.friendsSearchAction,
             ),
@@ -42,15 +46,137 @@ class FriendsPage extends ConsumerWidget {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _FriendsTab(friendsAsync: ref.watch(friendsProvider)),
-            _RequestsTab(
-              requestsAsync: ref.watch(pendingRequestsProvider),
-              isLoadingAction: actionsState.isLoading,
+            Padding(
+              padding: AppSpacing.pagePadding,
+              child: _FriendsOverviewCard(
+                friendsTitle: localizations.friendsTitle,
+                requestsTitle: localizations.requestsTab,
+                searchActionLabel: localizations.friendsSearchAction,
+                friendCount: _formatCount(friendCount),
+                requestCount: _formatCount(requestCount),
+                onSearchPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const UserSearchPage()),
+                ),
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _FriendsTab(friendsAsync: friendsAsync),
+                  _RequestsTab(
+                    requestsAsync: requestsAsync,
+                    isLoadingAction: actionsState.isLoading,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _formatCount(int? count) {
+    if (count == null) {
+      return '...';
+    }
+    return count.toString();
+  }
+}
+
+class _FriendsOverviewCard extends StatelessWidget {
+  const _FriendsOverviewCard({
+    required this.friendsTitle,
+    required this.requestsTitle,
+    required this.searchActionLabel,
+    required this.friendCount,
+    required this.requestCount,
+    required this.onSearchPressed,
+  });
+
+  final String friendsTitle;
+  final String requestsTitle;
+  final String searchActionLabel;
+  final String friendCount;
+  final String requestCount;
+  final VoidCallback onSearchPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: AppSpacing.pagePadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              friendsTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _OverviewStat(label: friendsTitle, value: friendCount),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _OverviewStat(
+                    label: requestsTitle,
+                    value: requestCount,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onSearchPressed,
+                icon: const Icon(Icons.person_add_alt_1_outlined),
+                label: Text(searchActionLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewStat extends StatelessWidget {
+  const _OverviewStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(label, style: theme.textTheme.bodySmall),
+        ],
       ),
     );
   }
@@ -77,12 +203,12 @@ class _FriendsTab extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             final friend = friends[index];
-            return Card(
-              child: ListTile(
-                title: Text(friend.username),
-                subtitle: friend.displayName == null
-                    ? null
-                    : Text(friend.displayName!),
+            return FriendListProfileCard(
+              profile: friend,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => FriendProfilePage(profile: friend),
+                ),
               ),
             );
           },
@@ -122,6 +248,13 @@ class _RequestsTab extends ConsumerWidget {
             return FriendRequestWidget(
               request: request,
               isLoading: isLoadingAction,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => FriendProfilePage(
+                    profile: request.requester,
+                  ),
+                ),
+              ),
               onAccept: () => _handleResponse(
                 context,
                 ref,
