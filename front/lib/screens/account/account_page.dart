@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:front/core/constants/app_spacing.dart';
-import 'package:front/data/models/profile_model.dart';
-import 'package:front/domain/entities/friend_request.dart';
-import 'package:front/domain/entities/user_profile.dart';
 import 'package:front/l10n/app_localizations.dart';
 import 'package:front/main.dart';
+import 'package:front/presentation/pages/friends_page.dart';
 import 'package:front/presentation/pages/user_search_page.dart';
 import 'package:front/presentation/providers/friendship_providers.dart';
-import 'package:front/presentation/widgets/friend_request_widget.dart';
 import 'package:front/screens.dart';
+import 'package:front/screens/account/edit_profile_page.dart';
+import 'package:front/screens/account/widgets/profile_sections.dart';
+import 'package:front/screens/account/widgets/social_profile_header.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
@@ -22,80 +22,6 @@ class AccountPage extends ConsumerStatefulWidget {
 }
 
 class _AccountPageState extends ConsumerState<AccountPage> {
-  final _usernameController = TextEditingController();
-  final _displayNameController = TextEditingController();
-  final _avatarUrlController = TextEditingController();
-
-  bool _isPrivate = true;
-  String? _lastProfileSignature;
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _displayNameController.dispose();
-    _avatarUrlController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _updateProfile(ProfileModel profile) async {
-    final localizations = AppLocalizations.of(context)!;
-
-    try {
-      final updatedProfile = await ref
-          .read(currentUserProfileProvider.notifier)
-          .updateProfile(
-            profile.copyWith(
-              username: _usernameController.text.trim().toLowerCase(),
-              displayName: _displayNameController.text.trim().isEmpty
-                  ? null
-                  : _displayNameController.text.trim(),
-              avatarUrl: _avatarUrlController.text.trim().isEmpty
-                  ? null
-                  : _avatarUrlController.text.trim(),
-              isPrivate: _isPrivate,
-            ),
-          );
-
-      _applyProfile(updatedProfile);
-      if (!mounted) {
-        return;
-      }
-      context.showSnackBar(localizations.profileUpdatedSuccess);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      context.showSnackBar(
-        error.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
-    }
-  }
-
-  void _applyProfile(ProfileModel profile) {
-    _usernameController.text = profile.username;
-    _displayNameController.text = profile.displayName ?? '';
-    _avatarUrlController.text = profile.avatarUrl ?? '';
-    _isPrivate = profile.isPrivate;
-  }
-
-  void _syncProfile(ProfileModel profile) {
-    final signature = [
-      profile.id,
-      profile.username,
-      profile.displayName ?? '',
-      profile.avatarUrl ?? '',
-      profile.isPrivate.toString(),
-    ].join('|');
-
-    if (signature == _lastProfileSignature) {
-      return;
-    }
-
-    _applyProfile(profile);
-    _lastProfileSignature = signature;
-  }
-
   void _redirectToLogin() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -106,6 +32,30 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         rootNavigator: true,
       ).pushNamedAndRemoveUntil(Screens.login, (_) => false);
     });
+  }
+
+  void _openUserSearch() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const UserSearchPage()));
+  }
+
+  void _openFriendsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FriendsPage(initialTabIndex: 0)),
+    );
+  }
+
+  void _openRequestsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FriendsPage(initialTabIndex: 1)),
+    );
+  }
+
+  void _openEditProfilePage() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const EditProfilePage()));
   }
 
   Future<void> _signOut() async {
@@ -132,33 +82,36 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
-  Future<void> _respondToRequest(
-    String requestId,
-    FriendRequestStatus status,
-  ) async {
-    final localizations = AppLocalizations.of(context)!;
-
-    try {
-      await ref
-          .read(friendshipActionsProvider.notifier)
-          .respondToRequest(requestId, status);
-      if (!mounted) {
-        return;
-      }
-      context.showSnackBar(
-        status == FriendRequestStatus.accepted
-            ? localizations.friendRequestAcceptedSuccess
-            : localizations.friendRequestDeclinedSuccess,
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      context.showSnackBar(
-        error.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
+  String _formatCount(int? count) {
+    if (count == null) {
+      return '...';
     }
+    return count.toString();
+  }
+
+  String _friendSubtitle(AppLocalizations localizations, int? count) {
+    if (count == null) {
+      return localizations.loading;
+    }
+    if (count == 0) {
+      return localizations.friendsListEmpty;
+    }
+    return localizations.friendsTab;
+  }
+
+  String _requestSubtitle(AppLocalizations localizations, int? count) {
+    if (count == null) {
+      return localizations.loading;
+    }
+    if (count == 0) {
+      return localizations.requestsListEmpty;
+    }
+    return localizations.requestsTab;
+  }
+
+  String _editSubtitle(AppLocalizations localizations) {
+    return '${localizations.profileUsername} • '
+        '${localizations.profileDisplayName}';
   }
 
   @override
@@ -179,19 +132,18 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     final profileAsync = ref.watch(currentUserProfileProvider);
     final friendsAsync = ref.watch(friendsProvider);
     final pendingRequestsAsync = ref.watch(pendingRequestsProvider);
-    final actionsState = ref.watch(friendshipActionsProvider);
-    final isSaving = profileAsync.isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.profileTitle),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const UserSearchPage()));
-            },
+            onPressed: _openEditProfilePage,
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: localizations.profileUpdate,
+          ),
+          IconButton(
+            onPressed: _openUserSearch,
             icon: const Icon(Icons.person_add_alt_1_outlined),
             tooltip: localizations.friendsSearchAction,
           ),
@@ -199,75 +151,51 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       ),
       body: profileAsync.when(
         data: (profile) {
-          _syncProfile(profile);
+          final friendCount = friendsAsync.valueOrNull?.length;
+          final requestCount = pendingRequestsAsync.valueOrNull?.length;
 
           return ListView(
             padding: AppSpacing.pagePadding,
             children: [
-              _SectionTitle(title: localizations.profileTitle),
-              const SizedBox(height: AppSpacing.md),
-              Card(
-                child: Padding(
-                  padding: AppSpacing.pagePadding,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                          labelText: localizations.profileUsername,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      TextFormField(
-                        controller: _displayNameController,
-                        decoration: InputDecoration(
-                          labelText: localizations.profileDisplayName,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      TextFormField(
-                        controller: _avatarUrlController,
-                        decoration: InputDecoration(
-                          labelText: localizations.profileAvatarUrl,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _isPrivate,
-                        onChanged: (value) =>
-                            setState(() => _isPrivate = value),
-                        title: Text(localizations.profilePrivate),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isSaving
-                              ? null
-                              : () => _updateProfile(profile),
-                          child: Text(
-                            isSaving
-                                ? localizations.profileSaving
-                                : localizations.profileUpdate,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              SocialProfileHeader(
+                profile: profile,
+                friendsLabel: localizations.friendsTitle,
+                requestsLabel: localizations.requestsTab,
+                visibilityLabel: localizations.profilePrivate,
+                publicLabel: localizations.searchResultPublic,
+                privateLabel: localizations.searchResultPrivate,
+                searchActionLabel: localizations.friendsSearchAction,
+                editActionLabel: localizations.profileUpdate,
+                onSearchPressed: _openUserSearch,
+                onEditPressed: _openEditProfilePage,
+                friendCount: friendCount,
+                pendingRequestCount: requestCount,
               ),
               const SizedBox(height: AppSpacing.xl),
-              _SectionTitle(title: localizations.friendsTitle),
+              ProfileSectionTitle(title: localizations.profileTitle),
               const SizedBox(height: AppSpacing.md),
-              _FriendsPreview(friendsAsync: friendsAsync),
-              const SizedBox(height: AppSpacing.xl),
-              _SectionTitle(title: localizations.requestsTab),
+              ProfileNavigationCard(
+                icon: Icons.edit_outlined,
+                title: localizations.profileUpdate,
+                subtitle: _editSubtitle(localizations),
+                value: '',
+                onTap: _openEditProfilePage,
+              ),
               const SizedBox(height: AppSpacing.md),
-              _PendingRequestsPreview(
-                requestsAsync: pendingRequestsAsync,
-                isLoadingAction: actionsState.isLoading,
-                onRespond: _respondToRequest,
+              ProfileNavigationCard(
+                icon: Icons.people_outline,
+                title: localizations.friendsTitle,
+                subtitle: _friendSubtitle(localizations, friendCount),
+                value: _formatCount(friendCount),
+                onTap: _openFriendsPage,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ProfileNavigationCard(
+                icon: Icons.mark_email_unread_outlined,
+                title: localizations.requestsTab,
+                subtitle: _requestSubtitle(localizations, requestCount),
+                value: _formatCount(requestCount),
+                onTap: _openRequestsPage,
               ),
               const SizedBox(height: AppSpacing.xl),
               TextButton(
@@ -279,121 +207,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         },
         error: (error, _) => Center(child: Text(error.toString())),
         loading: () => const Center(child: CircularProgressIndicator()),
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(
-        context,
-      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-    );
-  }
-}
-
-class _FriendsPreview extends StatelessWidget {
-  const _FriendsPreview({required this.friendsAsync});
-
-  final AsyncValue<List<UserProfile>> friendsAsync;
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-
-    return friendsAsync.when(
-      data: (friends) {
-        if (friends.isEmpty) {
-          return _EmptyCard(message: localizations.friendsListEmpty);
-        }
-
-        return Column(
-          children: [
-            for (var index = 0; index < friends.length; index++) ...[
-              Card(
-                child: ListTile(
-                  title: Text(friends[index].username),
-                  subtitle: friends[index].displayName == null
-                      ? null
-                      : Text(friends[index].displayName!),
-                ),
-              ),
-              if (index < friends.length - 1)
-                const SizedBox(height: AppSpacing.md),
-            ],
-          ],
-        );
-      },
-      error: (error, _) => _EmptyCard(message: error.toString()),
-      loading: () => const Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-class _PendingRequestsPreview extends StatelessWidget {
-  const _PendingRequestsPreview({
-    required this.requestsAsync,
-    required this.isLoadingAction,
-    required this.onRespond,
-  });
-
-  final AsyncValue<List<FriendRequest>> requestsAsync;
-  final bool isLoadingAction;
-  final Future<void> Function(String requestId, FriendRequestStatus status)
-  onRespond;
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-
-    return requestsAsync.when(
-      data: (requests) {
-        if (requests.isEmpty) {
-          return _EmptyCard(message: localizations.requestsListEmpty);
-        }
-
-        return Column(
-          children: [
-            for (var index = 0; index < requests.length; index++) ...[
-              FriendRequestWidget(
-                request: requests[index],
-                isLoading: isLoadingAction,
-                onAccept: () =>
-                    onRespond(requests[index].id, FriendRequestStatus.accepted),
-                onDecline: () =>
-                    onRespond(requests[index].id, FriendRequestStatus.declined),
-              ),
-              if (index < requests.length - 1)
-                const SizedBox(height: AppSpacing.md),
-            ],
-          ],
-        );
-      },
-      error: (error, _) => _EmptyCard(message: error.toString()),
-      loading: () => const Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: AppSpacing.pagePadding,
-        child: Text(message, textAlign: TextAlign.center),
       ),
     );
   }
