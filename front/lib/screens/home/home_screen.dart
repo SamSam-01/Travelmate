@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:front/commons.dart';
 import 'package:front/l10n/app_localizations.dart';
+import 'package:front/main.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
-import 'package:front/main.dart';
 import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/utils/planned_outings_helper.dart';

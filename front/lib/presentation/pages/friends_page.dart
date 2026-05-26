@@ -71,7 +71,7 @@ class _FriendsTab extends StatelessWidget {
         return ListView.separated(
           padding: AppSpacing.pagePadding,
           itemCount: friends.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             final friend = friends[index];
             return Card(
@@ -113,7 +113,7 @@ class _RequestsTab extends ConsumerWidget {
         return ListView.separated(
           padding: AppSpacing.pagePadding,
           itemCount: requests.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             final request = requests[index];
             return FriendRequestWidget(

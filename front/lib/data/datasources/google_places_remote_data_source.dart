@@ -75,9 +75,9 @@ class GooglePlacesRemoteDataSource {
     String? regionCode,
   }) async {
     final queryParameters = <String, String>{
-      if (languageCode != null) 'languageCode': languageCode,
-      if (regionCode != null) 'regionCode': regionCode,
-      if (sessionToken != null) 'sessionToken': sessionToken,
+      'languageCode': ?languageCode,
+      'regionCode': ?regionCode,
+      'sessionToken': ?sessionToken,
     };
 
     return PlaceSearchDetailsModel.fromJson(

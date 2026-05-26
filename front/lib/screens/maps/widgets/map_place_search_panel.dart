@@ -142,24 +142,27 @@ class _SuggestionsList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: suggestions.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const Divider(height: 1, color: CrazerColors.border),
       itemBuilder: (context, index) {
         final suggestion = suggestions[index];
 
-        return ListTile(
-          onTap: () => onSuggestionSelected(suggestion),
-          leading: const Icon(Icons.place_outlined, color: CrazerColors.lime),
-          title: Text(
-            suggestion.title,
-            style: const TextStyle(color: CrazerColors.textPrimary),
+        return Material(
+          color: Colors.transparent,
+          child: ListTile(
+            onTap: () => onSuggestionSelected(suggestion),
+            leading: const Icon(Icons.place_outlined, color: CrazerColors.lime),
+            title: Text(
+              suggestion.title,
+              style: const TextStyle(color: CrazerColors.textPrimary),
+            ),
+            subtitle: suggestion.subtitle == null
+                ? null
+                : Text(
+                    suggestion.subtitle!,
+                    style: const TextStyle(color: CrazerColors.textSecondary),
+                  ),
           ),
-          subtitle: suggestion.subtitle == null
-              ? null
-              : Text(
-                  suggestion.subtitle!,
-                  style: const TextStyle(color: CrazerColors.textSecondary),
-                ),
         );
       },
     );

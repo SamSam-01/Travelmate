@@ -46,16 +46,16 @@ Respecte strictement cette arborescence. Si une nouvelle couche ou catégorie es
 
 ## Conventions de nommage
 
-| Élément | Convention | Exemple |
-|---|---|---|
-| Fichiers | `snake_case` | `user_profile_page.dart` |
-| Classes | `PascalCase` | `UserProfilePage` |
-| Variables / fonctions | `camelCase` | `fetchUserData()` |
-| Constantes | `camelCase` dans une classe `const` | `AppColors.primary` |
-| Widgets | Suffixe `Widget` ou `Page` | `AvatarWidget`, `LoginPage` |
-| Use cases | Verbe + nom | `FetchUserUseCase`, `UpdateProfileUseCase` |
-| Providers (Riverpod) | Suffixe `Provider` | `userProfileProvider` |
-| Notifiers | Suffixe `Notifier` | `AuthNotifier` |
+| Élément               | Convention                          | Exemple                                    |
+| --------------------- | ----------------------------------- | ------------------------------------------ |
+| Fichiers              | `snake_case`                        | `user_profile_page.dart`                   |
+| Classes               | `PascalCase`                        | `UserProfilePage`                          |
+| Variables / fonctions | `camelCase`                         | `fetchUserData()`                          |
+| Constantes            | `camelCase` dans une classe `const` | `AppColors.primary`                        |
+| Widgets               | Suffixe `Widget` ou `Page`          | `AvatarWidget`, `LoginPage`                |
+| Use cases             | Verbe + nom                         | `FetchUserUseCase`, `UpdateProfileUseCase` |
+| Providers (Riverpod)  | Suffixe `Provider`                  | `userProfileProvider`                      |
+| Notifiers             | Suffixe `Notifier`                  | `AuthNotifier`                             |
 
 ---
 

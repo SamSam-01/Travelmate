@@ -51,9 +51,9 @@ void main() {
     ).thenAnswer((_) async => <String>{});
   });
 
-  Widget buildApp(Widget child, {List<Override> overrides = const []}) {
+  Widget buildApp(Widget child, {List<dynamic> overrides = const []}) {
     return ProviderScope(
-      overrides: overrides,
+      overrides: overrides.cast(),
       child: MaterialApp(
         locale: const Locale('fr'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
