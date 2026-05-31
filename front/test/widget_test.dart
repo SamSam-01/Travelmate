@@ -7,16 +7,56 @@ import 'package:front/screens.dart';
 import 'package:front/screens/app/authenticated_app_shell.dart';
 import 'package:front/screens/home/home_page.dart';
 import 'package:front/screens/login/login_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+class InMemorySupabaseStorage extends LocalStorage
+    implements GotrueAsyncStorage {
+  InMemorySupabaseStorage();
+
+  final Map<String, String> _storage = <String, String>{};
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> hasAccessToken() async => _storage.isNotEmpty;
+
+  @override
+  Future<String?> accessToken() async => _storage.values.firstOrNull;
+
+  @override
+  Future<void> removePersistedSession() async {
+    _storage.clear();
+  }
+
+  @override
+  Future<void> persistSession(String persistSessionString) async {
+    _storage['session'] = persistSessionString;
+  }
+
+  @override
+  Future<String?> getItem({required String key}) async => _storage[key];
+
+  @override
+  Future<void> setItem({required String key, required String value}) async {
+    _storage[key] = value;
+  }
+
+  @override
+  Future<void> removeItem({required String key}) async {
+    _storage.remove(key);
+  }
+}
 
 void main() {
   setUpAll(() async {
-    SharedPreferences.setMockInitialValues({});
-
     await Supabase.initialize(
       url: 'https://example.supabase.co',
       anonKey: 'test-anon-key',
+      authOptions: FlutterAuthClientOptions(
+        localStorage: InMemorySupabaseStorage(),
+        pkceAsyncStorage: InMemorySupabaseStorage(),
+      ),
     );
   });
 
