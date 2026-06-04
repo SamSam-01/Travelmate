@@ -8,6 +8,7 @@ class SelectedMapPlace {
     required this.sourceLabel,
     required this.longitude,
     required this.latitude,
+    this.googlePlaceId,
     this.address,
     this.rating,
     this.reviewCount,
@@ -28,6 +29,7 @@ class SelectedMapPlace {
   final String sourceLabel;
   final double longitude;
   final double latitude;
+  final String? googlePlaceId;
   final String? address;
   final double? rating;
   final int? reviewCount;
@@ -102,6 +104,7 @@ class SelectedMapPlace {
       sourceLabel: sourceLabel,
       longitude: details.longitude,
       latitude: details.latitude,
+      googlePlaceId: details.placeId,
       address: details.formattedAddress,
       rating: details.rating,
       reviewCount: details.userRatingCount,

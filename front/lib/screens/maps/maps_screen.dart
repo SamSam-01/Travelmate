@@ -20,7 +20,9 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 const String mapsInteractiveStyleUri = MapboxStyles.STANDARD;
 
 class MapsScreen extends StatefulWidget {
-  const MapsScreen({super.key});
+  const MapsScreen({super.key, this.selectionMode = false});
+
+  final bool selectionMode;
 
   @override
   State<MapsScreen> createState() => _MapsScreenState();
@@ -345,6 +347,27 @@ class _MapsScreenState extends State<MapsScreen> {
     });
   }
 
+  void _addSelectedPlaceAsActivity() {
+    final selectedPlace = _selectedPlace;
+    if (selectedPlace == null) {
+      return;
+    }
+
+    final googlePlaceId = selectedPlace.googlePlaceId?.trim() ?? '';
+    if (googlePlaceId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Choisis un lieu depuis la recherche Google pour ajouter une activité.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).pop(selectedPlace);
+  }
+
   double get _searchOverlayOpacity => 1 - _sheetExpansionProgress.clamp(0, 1);
 
   @override
@@ -408,6 +431,9 @@ class _MapsScreenState extends State<MapsScreen> {
             onClose: () {
               _clearSelection();
             },
+            onAddActivity: widget.selectionMode
+                ? _addSelectedPlaceAsActivity
+                : null,
             onExpandedChanged: (isExpanded) {
               if (!mounted || _isPlaceDetailsExpanded == isExpanded) {
                 return;

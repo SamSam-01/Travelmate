@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
+import 'package:front/screens/maps/maps_screen.dart';
+import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/outings/widgets/create_outing_components.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/styles/colors.dart';
@@ -29,7 +31,7 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
       _draft.title.isNotEmpty &&
       _draft.selectedUserIds.isNotEmpty &&
       _draft.scheduledFor != null &&
-      _draft.selectedActivityIds.isNotEmpty;
+      _draft.selectedPlaces.isNotEmpty;
 
   Future<void> _openDetailsStep() async {
     final result = await Navigator.of(context).push<_DetailsStepResult>(
@@ -57,7 +59,8 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
   Future<void> _openWhenStep() async {
     final result = await Navigator.of(context).push<DateTime>(
       MaterialPageRoute(
-        builder: (_) => _OutingWhenStepPage(initialDateTime: _draft.scheduledFor),
+        builder: (_) =>
+            _OutingWhenStepPage(initialDateTime: _draft.scheduledFor),
       ),
     );
 
@@ -69,11 +72,10 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
   }
 
   Future<void> _openActivitiesStep() async {
-    final result = await Navigator.of(context).push<Set<String>>(
+    final result = await Navigator.of(context).push<List<_OutingSelectedPlace>>(
       MaterialPageRoute(
         builder: (_) => _OutingActivitiesStepPage(
-          activities: widget.activities,
-          initialSelectedActivityIds: _draft.selectedActivityIds,
+          initialSelectedPlaces: _draft.selectedPlaces,
         ),
       ),
     );
@@ -81,7 +83,7 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
     if (result == null) return;
 
     setState(() {
-      _draft = _draft.copyWith(selectedActivityIds: result);
+      _draft = _draft.copyWith(selectedPlaces: result);
     });
   }
 
@@ -98,9 +100,15 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
     final selectedUsers = widget.users
         .where((user) => _draft.selectedUserIds.contains(user.id))
         .toList(growable: false);
-    final selectedActivities = widget.activities
-        .where((activity) => _draft.selectedActivityIds.contains(activity.id))
-        .map((activity) => PlannedOutingActivity.fromActivity(activity, time: ''))
+    final selectedActivities = _draft.selectedPlaces
+        .map(
+          (place) => PlannedOutingActivity.fromGooglePlace(
+            placeId: place.googlePlaceId,
+            title: place.name,
+            subtitle: place.address,
+            time: '',
+          ),
+        )
         .toList(growable: false);
 
     setState(() {
@@ -146,7 +154,8 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
           stepNumber: 1,
           title: 'Détails',
           summary: _detailsSummary(widget.users, _draft),
-          completed: _draft.title.isNotEmpty && _draft.selectedUserIds.isNotEmpty,
+          completed:
+              _draft.title.isNotEmpty && _draft.selectedUserIds.isNotEmpty,
           buttonLabel: 'Modifier les détails',
           onPressed: _openDetailsStep,
         ),
@@ -165,9 +174,9 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
         CrazerStepActionCard(
           stepNumber: 3,
           title: 'Quelles activités ?',
-          summary: _activitiesSummary(widget.activities, _draft.selectedActivityIds),
-          completed: _draft.selectedActivityIds.isNotEmpty,
-          buttonLabel: 'Choisir les activités',
+          summary: _activitiesSummary(_draft.selectedPlaces),
+          completed: _draft.selectedPlaces.isNotEmpty,
+          buttonLabel: 'Choisir une activité',
           onPressed: _openActivitiesStep,
         ),
         const SizedBox(height: 16),
@@ -224,7 +233,11 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
       return;
     }
     if (_selectedUserIds.isEmpty) {
-      showCrazerSnackBar(context, 'Sélectionne au moins un ami.', isError: true);
+      showCrazerSnackBar(
+        context,
+        'Sélectionne au moins un ami.',
+        isError: true,
+      );
       return;
     }
 
@@ -288,9 +301,9 @@ class _OutingDetailsStepPageState extends State<_OutingDetailsStepPage> {
         const SizedBox(height: 20),
         Text(
           'Amis participants',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -370,7 +383,11 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
 
   void _confirm() {
     if (_selectedDateTime == null) {
-      showCrazerSnackBar(context, 'Choisis une date et une heure.', isError: true);
+      showCrazerSnackBar(
+        context,
+        'Choisis une date et une heure.',
+        isError: true,
+      );
       return;
     }
     Navigator.of(context).pop(_selectedDateTime);
@@ -400,29 +417,64 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
 }
 
 class _OutingActivitiesStepPage extends StatefulWidget {
-  const _OutingActivitiesStepPage({
-    required this.activities,
-    required this.initialSelectedActivityIds,
-  });
+  const _OutingActivitiesStepPage({required this.initialSelectedPlaces});
 
-  final List<Activity> activities;
-  final Set<String> initialSelectedActivityIds;
+  final List<_OutingSelectedPlace> initialSelectedPlaces;
 
   @override
-  State<_OutingActivitiesStepPage> createState() => _OutingActivitiesStepPageState();
+  State<_OutingActivitiesStepPage> createState() =>
+      _OutingActivitiesStepPageState();
 }
 
 class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
-  late Set<String> _selectedActivityIds;
+  late List<_OutingSelectedPlace> _selectedPlaces;
 
   @override
   void initState() {
     super.initState();
-    _selectedActivityIds = <String>{...widget.initialSelectedActivityIds};
+    _selectedPlaces = <_OutingSelectedPlace>[...widget.initialSelectedPlaces];
+  }
+
+  Future<void> _openMapsPicker() async {
+    final selectedPlace = await Navigator.of(context).push<SelectedMapPlace>(
+      MaterialPageRoute(builder: (_) => const MapsScreen(selectionMode: true)),
+    );
+
+    if (selectedPlace == null) {
+      return;
+    }
+
+    final googlePlaceId = selectedPlace.googlePlaceId?.trim() ?? '';
+    if (googlePlaceId.isEmpty) {
+      showCrazerSnackBar(
+        context,
+        'Ce lieu ne possède pas d\'ID Google Place.',
+        isError: true,
+      );
+      return;
+    }
+
+    final nextPlace = _OutingSelectedPlace.fromSelectedMapPlace(selectedPlace);
+    if (_selectedPlaces.any((place) => place.googlePlaceId == googlePlaceId)) {
+      showCrazerSnackBar(context, 'Cette activité est déjà ajoutée.');
+      return;
+    }
+
+    setState(() {
+      _selectedPlaces = <_OutingSelectedPlace>[..._selectedPlaces, nextPlace];
+    });
+  }
+
+  void _removePlace(String googlePlaceId) {
+    setState(() {
+      _selectedPlaces = _selectedPlaces
+          .where((place) => place.googlePlaceId != googlePlaceId)
+          .toList(growable: false);
+    });
   }
 
   void _confirm() {
-    if (_selectedActivityIds.isEmpty) {
+    if (_selectedPlaces.isEmpty) {
       showCrazerSnackBar(
         context,
         'Sélectionne au moins une activité.',
@@ -430,7 +482,7 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
       );
       return;
     }
-    Navigator.of(context).pop(_selectedActivityIds);
+    Navigator.of(context).pop(_selectedPlaces);
   }
 
   @override
@@ -438,26 +490,59 @@ class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
     return CrazerStepScaffold(
       title: 'Étape 3 — Activités',
       children: [
-        for (final activity in widget.activities)
-          CheckboxListTile(
-            value: _selectedActivityIds.contains(activity.id),
-            activeColor: CrazerColors.lime,
-            checkColor: Colors.black,
-            title: Text(activity.title),
-            subtitle: activity.subtitle.isEmpty ? null : Text(activity.subtitle),
-            onChanged: (selected) {
-              setState(() {
-                if (selected ?? false) {
-                  _selectedActivityIds.add(activity.id);
-                } else {
-                  _selectedActivityIds.remove(activity.id);
-                }
-              });
-            },
+        CrazerOutlineButton(
+          label: 'Choisir un lieu sur la carte',
+          icon: Icons.map_outlined,
+          onPressed: _openMapsPicker,
+        ),
+        const SizedBox(height: 14),
+        if (_selectedPlaces.isEmpty)
+          const Text('Aucune activité ajoutée pour le moment.')
+        else
+          ..._selectedPlaces.map(
+            (place) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              color: CrazerColors.surface,
+              child: ListTile(
+                leading: const Icon(
+                  Icons.place_outlined,
+                  color: CrazerColors.lime,
+                ),
+                title: Text(place.name),
+                subtitle: Text(
+                  place.address.isEmpty ? place.googlePlaceId : place.address,
+                ),
+                trailing: IconButton(
+                  onPressed: () => _removePlace(place.googlePlaceId),
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ),
+            ),
           ),
         const SizedBox(height: 8),
         CrazerPrimaryButton(label: 'Confirmer', onPressed: _confirm),
       ],
+    );
+  }
+}
+
+class _OutingSelectedPlace {
+  const _OutingSelectedPlace({
+    required this.googlePlaceId,
+    required this.name,
+    required this.address,
+  });
+
+  final String googlePlaceId;
+  final String name;
+  final String address;
+
+  factory _OutingSelectedPlace.fromSelectedMapPlace(SelectedMapPlace place) {
+    final placeId = place.googlePlaceId?.trim() ?? '';
+    return _OutingSelectedPlace(
+      googlePlaceId: placeId,
+      name: place.name.trim().isEmpty ? placeId : place.name.trim(),
+      address: (place.address ?? '').trim(),
     );
   }
 }
@@ -468,28 +553,28 @@ class _CreateOutingDraft {
     this.visibility = OutingVisibility.private,
     this.scheduledFor,
     this.selectedUserIds = const <String>{},
-    this.selectedActivityIds = const <String>{},
+    this.selectedPlaces = const <_OutingSelectedPlace>[],
   });
 
   final String title;
   final OutingVisibility visibility;
   final DateTime? scheduledFor;
   final Set<String> selectedUserIds;
-  final Set<String> selectedActivityIds;
+  final List<_OutingSelectedPlace> selectedPlaces;
 
   _CreateOutingDraft copyWith({
     String? title,
     OutingVisibility? visibility,
     DateTime? scheduledFor,
     Set<String>? selectedUserIds,
-    Set<String>? selectedActivityIds,
+    List<_OutingSelectedPlace>? selectedPlaces,
   }) {
     return _CreateOutingDraft(
       title: title ?? this.title,
       visibility: visibility ?? this.visibility,
       scheduledFor: scheduledFor ?? this.scheduledFor,
       selectedUserIds: selectedUserIds ?? this.selectedUserIds,
-      selectedActivityIds: selectedActivityIds ?? this.selectedActivityIds,
+      selectedPlaces: selectedPlaces ?? this.selectedPlaces,
     );
   }
 }
@@ -506,7 +591,10 @@ class _DetailsStepResult {
   final Set<String> selectedUserIds;
 }
 
-String _detailsSummary(List<PlannedOutingUser> users, _CreateOutingDraft draft) {
+String _detailsSummary(
+  List<PlannedOutingUser> users,
+  _CreateOutingDraft draft,
+) {
   if (draft.title.isEmpty && draft.selectedUserIds.isEmpty) {
     return 'Titre, visibilité et amis participants non renseignés.';
   }
@@ -524,15 +612,14 @@ String _detailsSummary(List<PlannedOutingUser> users, _CreateOutingDraft draft) 
   return '${draft.title.isEmpty ? 'Sans titre' : draft.title} • ${draft.visibility.label} • $participants${selectedNames.isEmpty ? '' : ' ($selectedNames)'}';
 }
 
-String _activitiesSummary(List<Activity> activities, Set<String> selectedIds) {
-  if (selectedIds.isEmpty) return 'Aucune activité sélectionnée.';
+String _activitiesSummary(List<_OutingSelectedPlace> selectedPlaces) {
+  if (selectedPlaces.isEmpty) return 'Aucune activité sélectionnée.';
 
-  final selectedTitles = activities
-      .where((activity) => selectedIds.contains(activity.id))
-      .map((activity) => activity.title)
+  final selectedTitles = selectedPlaces
+      .map((place) => place.name)
       .take(3)
       .join(', ');
-  return '${selectedIds.length} activité${selectedIds.length > 1 ? 's' : ''} • $selectedTitles';
+  return '${selectedPlaces.length} activité${selectedPlaces.length > 1 ? 's' : ''} • $selectedTitles';
 }
 
 String _formatDateTime(DateTime value) {

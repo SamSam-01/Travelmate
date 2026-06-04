@@ -54,6 +54,8 @@ class PlannedOutingActivity {
     required this.title,
     required this.time,
     this.activityId = '',
+    this.googlePlaceId = '',
+    this.googlePlaceName = '',
     this.subtitle = '',
     this.badge = '',
     this.tone = HomeCarouselTone.planned,
@@ -71,7 +73,22 @@ class PlannedOutingActivity {
         icon: activity.icon,
       );
 
+  PlannedOutingActivity.fromGooglePlace({
+    required String placeId,
+    required String title,
+    required String time,
+    String subtitle = '',
+  }) : this(
+         googlePlaceId: placeId,
+         googlePlaceName: title,
+         title: title,
+         time: time,
+         subtitle: subtitle,
+       );
+
   final String activityId;
+  final String googlePlaceId;
+  final String googlePlaceName;
 
   final String title;
   final String time;
@@ -98,8 +115,15 @@ class PlannedOutingActivity {
 
       return PlannedOutingActivity(
         activityId: (json['activity_id'] ?? json['id'] ?? '').toString(),
-        title: (json['title'] ?? json['name'] ?? json['label'] ?? '')
-            .toString(),
+        googlePlaceId: (json['google_place_id'] ?? '').toString(),
+        googlePlaceName: (json['google_place_name'] ?? '').toString(),
+        title:
+            (json['title'] ??
+                    json['google_place_name'] ??
+                    json['name'] ??
+                    json['label'] ??
+                    '')
+                .toString(),
         time: (json['time'] ?? json['hour'] ?? json['starts_at'] ?? '')
             .toString(),
         subtitle: (json['subtitle'] ?? '').toString(),
@@ -112,7 +136,12 @@ class PlannedOutingActivity {
     return PlannedOutingActivity(title: json?.toString() ?? '', time: '');
   }
 
-  Map<String, dynamic> toJson() => {'activity_id': activityId, 'time': time};
+  Map<String, dynamic> toJson() => {
+    'activity_id': activityId,
+    'google_place_id': googlePlaceId,
+    'google_place_name': googlePlaceName,
+    'time': time,
+  };
 
   static HomeCarouselTone _toneFromValue(dynamic value) {
     final normalized = value?.toString().trim().toLowerCase();

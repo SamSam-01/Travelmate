@@ -155,8 +155,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed:
-                            (data.users.isEmpty || data.activities.isEmpty)
+                        onPressed: (data.users.isEmpty)
                             ? null
                             : () => _openCreateFlow(data),
                         icon: const Icon(Icons.add),

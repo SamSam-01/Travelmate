@@ -26,7 +26,9 @@ class PlannedOutingService {
 
     final activityLinkRows = await supabase
         .from('planned_outing_activities')
-        .select('planned_outing_id, activity_id, time, sort_order')
+        .select(
+          'planned_outing_id, activity_id, google_place_id, google_place_name, time, sort_order',
+        )
         .order('sort_order');
 
     final activityRows = await supabase
@@ -134,16 +136,24 @@ class PlannedOutingService {
     for (final row in activityLinkRows) {
       final outingId = (row['planned_outing_id'] ?? '').toString();
       final activityId = (row['activity_id'] ?? '').toString();
+      final googlePlaceId = (row['google_place_id'] ?? '').toString();
+      final googlePlaceName = (row['google_place_name'] ?? '').toString();
       final time = (row['time'] ?? '').toString();
       final sortOrder = _intFromValue(row['sort_order']);
 
-      if (outingId.isEmpty || activityId.isEmpty) {
+      if (outingId.isEmpty || (activityId.isEmpty && googlePlaceId.isEmpty)) {
         continue;
       }
 
       grouped.putIfAbsent(outingId, () => <_ActivityLink>[]);
       grouped[outingId]!.add(
-        _ActivityLink(activityId: activityId, time: time, sortOrder: sortOrder),
+        _ActivityLink(
+          activityId: activityId,
+          googlePlaceId: googlePlaceId,
+          googlePlaceName: googlePlaceName,
+          time: time,
+          sortOrder: sortOrder,
+        ),
       );
     }
 
@@ -156,6 +166,16 @@ class PlannedOutingService {
         outingId,
         links
             .map((link) {
+              if (link.googlePlaceId.isNotEmpty) {
+                return PlannedOutingActivity.fromGooglePlace(
+                  placeId: link.googlePlaceId,
+                  title: link.googlePlaceName.isEmpty
+                      ? link.googlePlaceId
+                      : link.googlePlaceName,
+                  time: link.time,
+                );
+              }
+
               final activity = activityById[link.activityId];
               if (activity == null) {
                 return PlannedOutingActivity(
@@ -212,11 +232,23 @@ class PlannedOutingService {
           activities
               .asMap()
               .entries
-              .where((entry) => entry.value.activityId.isNotEmpty)
+              .where(
+                (entry) =>
+                    entry.value.activityId.isNotEmpty ||
+                    entry.value.googlePlaceId.isNotEmpty,
+              )
               .map(
                 (entry) => {
                   'planned_outing_id': outingId,
-                  'activity_id': entry.value.activityId,
+                  'activity_id': entry.value.activityId.isEmpty
+                      ? null
+                      : entry.value.activityId,
+                  'google_place_id': entry.value.googlePlaceId.isEmpty
+                      ? null
+                      : entry.value.googlePlaceId,
+                  'google_place_name': entry.value.googlePlaceName.isEmpty
+                      ? entry.value.title
+                      : entry.value.googlePlaceName,
                   'time': entry.value.time,
                   'sort_order': entry.key,
                 },
@@ -235,11 +267,15 @@ class PlannedOutingService {
 class _ActivityLink {
   const _ActivityLink({
     required this.activityId,
+    required this.googlePlaceId,
+    required this.googlePlaceName,
     required this.time,
     required this.sortOrder,
   });
 
   final String activityId;
+  final String googlePlaceId;
+  final String googlePlaceName;
   final String time;
   final int sortOrder;
 }

@@ -10,6 +10,7 @@ class MapPlaceDetailsSheet extends StatefulWidget {
   const MapPlaceDetailsSheet({
     required this.place,
     required this.onClose,
+    this.onAddActivity,
     this.onExpandedChanged,
     this.onExpansionProgressChanged,
     super.key,
@@ -17,6 +18,7 @@ class MapPlaceDetailsSheet extends StatefulWidget {
 
   final SelectedMapPlace? place;
   final VoidCallback onClose;
+  final VoidCallback? onAddActivity;
   final ValueChanged<bool>? onExpandedChanged;
   final ValueChanged<double>? onExpansionProgressChanged;
 
@@ -248,6 +250,17 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                                   color: CrazerColors.textSecondary,
                                   height: 1.35,
                                 ),
+                          ),
+                        ],
+                        if (widget.onAddActivity != null) ...[
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: widget.onAddActivity,
+                              icon: const Icon(Icons.add_location_alt_outlined),
+                              label: const Text('Ajouter l’activité'),
+                            ),
                           ),
                         ],
                         if (detailsVisible &&

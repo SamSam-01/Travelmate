@@ -94,6 +94,41 @@ void main() {
     expect(didClose, isTrue);
   });
 
+  testWidgets('should call onAddActivity when add activity button is tapped', (
+    WidgetTester tester,
+  ) async {
+    var didAddActivity = false;
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _buildLocalizedApp(
+        child: Scaffold(
+          body: MapPlaceDetailsSheet(
+            place: const SelectedMapPlace(
+              name: 'Marché Forain',
+              sourceLabel: 'Google Places',
+              longitude: 55.450700,
+              latitude: -20.878900,
+              googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
+            ),
+            onClose: _noop,
+            onAddActivity: () {
+              didAddActivity = true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.ensureVisible(find.text('Ajouter l’activité'));
+    await tester.tap(find.text('Ajouter l’activité'));
+    await tester.pump();
+
+    expect(didAddActivity, isTrue);
+  });
+
   testWidgets('should reveal extended details when more details is tapped', (
     WidgetTester tester,
   ) async {
