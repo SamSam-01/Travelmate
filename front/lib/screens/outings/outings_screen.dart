@@ -2,7 +2,6 @@ import 'package:front/commons.dart';
 import 'package:front/main.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
-import 'package:front/main.dart';
 import 'package:front/screens/outings/create_outing_flow_screen.dart';
 import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
@@ -924,6 +923,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
         title: title,
         users: selectedUsers,
         activities: activities,
+        visibility: OutingVisibility.private,
       );
 
       if (!mounted) {
@@ -947,16 +947,6 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
         });
       }
     }
-  }
-
-  TimeOfDay? _parseTimeOfDay(String value) {
-    final normalized = value.trim();
-    final match = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(normalized);
-    if (match == null) return null;
-    final hour = int.tryParse(match.group(1)!);
-    final minute = int.tryParse(match.group(2)!);
-    if (hour == null || minute == null) return null;
-    return TimeOfDay(hour: hour, minute: minute);
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
