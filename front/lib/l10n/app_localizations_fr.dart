@@ -62,6 +62,90 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapsRecenterTooltip => 'Recentrer';
 
   @override
+  String get mapsPlaceDetailsEmptyTitle => 'Sélectionnez un lieu';
+
+  @override
+  String get mapsPlaceDetailsEmptyMessage =>
+      'Touchez un point d\'intérêt ou un libellé sur la carte pour afficher ses informations.';
+
+  @override
+  String get mapsPlaceDetailsSourcePoi => 'Point d\'intérêt';
+
+  @override
+  String get mapsPlaceDetailsSourcePlace => 'Lieu';
+
+  @override
+  String get mapsPlaceDetailsSourceGoogle => 'Google Places';
+
+  @override
+  String get mapsPlaceDetailsAddress => 'Adresse';
+
+  @override
+  String get mapsPlaceDetailsPlaceId => 'Place ID';
+
+  @override
+  String get mapsPlaceDetailsRating => 'Note';
+
+  @override
+  String get mapsPlaceDetailsReviewCount => 'Avis';
+
+  @override
+  String get mapsPlaceDetailsOpenNow => 'Statut';
+
+  @override
+  String get mapsPlaceDetailsOpen => 'Ouvert';
+
+  @override
+  String get mapsPlaceDetailsClosed => 'Fermé';
+
+  @override
+  String get mapsPlaceDetailsOpeningHours => 'Horaires d\'ouverture';
+
+  @override
+  String get mapsPlaceDetailsMoreDetails => 'Voir plus de détails';
+
+  @override
+  String get mapsPlaceDetailsCategory => 'Catégorie';
+
+  @override
+  String get mapsPlaceDetailsGroup => 'Groupe';
+
+  @override
+  String get mapsPlaceDetailsIcon => 'Icône';
+
+  @override
+  String get mapsPlaceDetailsTransitMode => 'Mode de transport';
+
+  @override
+  String get mapsPlaceDetailsTransitStopType => 'Type d\'arrêt';
+
+  @override
+  String get mapsPlaceDetailsTransitNetwork => 'Réseau';
+
+  @override
+  String get mapsPlaceDetailsAirportCode => 'Code aéroport';
+
+  @override
+  String get mapsPlaceDetailsLongitude => 'Longitude';
+
+  @override
+  String get mapsPlaceDetailsLatitude => 'Latitude';
+
+  @override
+  String get mapsSearchHint => 'Rechercher un lieu';
+
+  @override
+  String get mapsSearchEmpty =>
+      'Aucun résultat Google Places pour cette recherche.';
+
+  @override
+  String get mapsSearchDisabledMessage =>
+      'Ajoute GOOGLE_PLACES_API_KEY pour activer la recherche de lieux à bas coût.';
+
+  @override
+  String get mapsSearchPoweredByGoogle => 'Powered by Google';
+
+  @override
   String get resetPasswordTitle => 'Nouveau mot de passe';
 
   @override
