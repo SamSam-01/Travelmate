@@ -5,9 +5,10 @@ This directory contains the infrastructure-as-code and local development configu
 ## 🚀 Prerequisites
 
 1. **Docker Desktop:** Must be installed and running (required for local Supabase instance).
-2. **Supabase CLI:** * macOS/Linux (Homebrew): `brew install supabase/tap/supabase`
-    * Windows (Scoop): `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git && scoop install supabase`
-    * NPM: `npm install supabase --save-dev` or `npx supabase <command>`
+2. **Supabase CLI:**
+   * macOS/Linux (Homebrew): `brew install supabase/tap/supabase`
+   * Windows (Scoop): `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git && scoop install supabase`
+   * NPM: `npm install supabase --save-dev` or `npx supabase <command>`
 
 ---
 
