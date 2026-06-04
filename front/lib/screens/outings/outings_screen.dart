@@ -1,13 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:front/commons.dart';
+import 'package:front/main.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
-import 'package:front/main.dart';
 import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/services/user_service.dart';
-import 'package:front/utils/planned_outings_helper.dart';
-import 'package:front/styles/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OutingsScreen extends StatefulWidget {
@@ -288,7 +285,9 @@ class _PlannedOutingCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
-                              activity.time.isEmpty ? '—:—' : activity.time.replaceAll(' ', '\n'),
+                              activity.time.isEmpty
+                                  ? '—:—'
+                                  : activity.time.replaceAll(' ', '\n'),
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
@@ -573,7 +572,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
   Future<void> _pickDateTime(int index) async {
     final now = DateTime.now();
     final current = _activityDrafts[index].timeController.text;
-    
+
     // Parse current if available (format: DD/MM/YYYY HH:mm)
     DateTime? initialDate;
     TimeOfDay? initialTime;
@@ -619,7 +618,8 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
     final minute = pickedTime.minute.toString().padLeft(2, '0');
 
     setState(() {
-      _activityDrafts[index].timeController.text = '$day/$month/$year $hour:$minute';
+      _activityDrafts[index].timeController.text =
+          '$day/$month/$year $hour:$minute';
     });
   }
 
@@ -884,7 +884,7 @@ class _ActivityDraftRow extends StatelessWidget {
               ],
             ),
             DropdownButtonFormField<Activity>(
-              value: draft.selectedActivity,
+              initialValue: draft.selectedActivity,
               items: activities
                   .map(
                     (activity) => DropdownMenuItem<Activity>(

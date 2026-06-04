@@ -41,7 +41,7 @@ class MapPlaceHero extends StatelessWidget {
                   place.photoUrl!,
                   fit: BoxFit.cover,
                   alignment: Alignment.center,
-                  errorBuilder: (_, __, ___) => const _HeroFallback(),
+                  errorBuilder: (_, _, _) => const _HeroFallback(),
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) {
                       return child;

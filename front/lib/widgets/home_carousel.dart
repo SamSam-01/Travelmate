@@ -47,50 +47,63 @@ class _HomeCarouselState extends State<HomeCarousel> {
         const SizedBox(height: 12),
         SizedBox(
           height: widget.height,
-          child: Column(
-            children: [
-              Expanded(
-                child: ScrollConfiguration(
-                  behavior: const _CarouselScrollBehavior(),
-                  child: PageView.builder(
-                    controller: _controller,
-                    itemCount: widget.items.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      return AnimatedScale(
-                        duration: const Duration(milliseconds: 200),
-                        scale: index == _currentIndex ? 1 : 0.97,
-                        child: _CarouselCard(item: item),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  widget.items.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    height: 8,
-                    width: _currentIndex == index ? 22 : 8,
-                    decoration: BoxDecoration(
-                      color: _currentIndex == index
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(99),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Reserve space for the indicator + spacing explicitly to avoid
+              // RenderFlex overflow when the parent has tight constraints.
+              const indicatorHeight = 8.0;
+              const indicatorSpacing = 12.0;
+              final pageViewHeight =
+                  (constraints.maxHeight - indicatorHeight - indicatorSpacing)
+                      .clamp(0.0, constraints.maxHeight);
+
+              return Column(
+                children: [
+                  SizedBox(
+                    height: pageViewHeight,
+                    child: ScrollConfiguration(
+                      behavior: const _CarouselScrollBehavior(),
+                      child: PageView.builder(
+                        controller: _controller,
+                        itemCount: widget.items.length,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentIndex = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          final item = widget.items[index];
+                          return AnimatedScale(
+                            duration: const Duration(milliseconds: 200),
+                            scale: index == _currentIndex ? 1 : 0.97,
+                            child: _CarouselCard(item: item),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
+                  const SizedBox(height: indicatorSpacing),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      widget.items.length,
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: indicatorHeight,
+                        width: _currentIndex == index ? 22 : 8,
+                        decoration: BoxDecoration(
+                          color: _currentIndex == index
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],

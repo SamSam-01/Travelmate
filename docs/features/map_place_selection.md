@@ -8,6 +8,7 @@ L'onglet Maps permet maintenant de toucher un point d'intérêt Mapbox ou un lib
 - Un tap sur un libellé de lieu affiche la même fiche compacte avec les informations disponibles.
 - Une recherche Google Places ne se déclenche qu'après 2 caractères et un debounce pour limiter le nombre d'appels facturables.
 - La sélection d'un résultat Google recentre la carte et affiche une fiche compacte avec photo principale, note, statut ouvert/fermé, catégorie et adresse.
+- Les suggestions Google restent affichées comme des éléments de liste interactifs et tactiles au sein du panneau de recherche.
 - La barre de recherche reste affichée au-dessus de la carte tant que la fiche n'est pas largement ouverte.
 - Quand la fiche monte, la barre de recherche se décale et s'efface progressivement pour suivre visuellement l'expansion du sheet.
 - L'aperçu compact s'arrête à l'adresse du lieu. Les détails longs n'apparaissent qu'après expansion.
