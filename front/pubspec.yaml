@@ -35,7 +35,7 @@ dependencies:
   flutter_riverpod: ^3.3.1
   fpdart: ^1.1.1
   intl: ^0.20.2
-  mapbox_maps_flutter: ^2.21.1
+  mapbox_maps_flutter: ^2.24.3
   supabase_flutter: ^2.0.0
 
   # The following adds the Cupertino Icons font to your application.
