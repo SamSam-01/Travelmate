@@ -485,7 +485,15 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
     final title = _titleController.text.trim();
     final selectedUsers = widget.users
         .where((user) => _selectedUserIds.contains(user.id))
-        .toList(growable: false);
+        .toList();
+
+    final currentUserId = supabase.auth.currentUser?.id;
+    if (currentUserId != null) {
+      final creator = widget.users.where((u) => u.id == currentUserId).firstOrNull;
+      if (creator != null && !selectedUsers.any((u) => u.id == creator.id)) {
+        selectedUsers.add(creator);
+      }
+    }
     final activities = _activityDrafts
         .map(
           (draft) => draft.selectedActivity == null
@@ -507,8 +515,8 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
       return;
     }
 
-    if (selectedUsers.isEmpty) {
-      _showSnackBar('Sélectionne au moins un utilisateur.', isError: true);
+    if (selectedUsers.length <= 1) {
+      _showSnackBar('Sélectionne au moins un invité.', isError: true);
       return;
     }
 
@@ -613,6 +621,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
               spacing: 8,
               runSpacing: 8,
               children: widget.users
+                  .where((user) => user.id != supabase.auth.currentUser?.id)
                   .map(
                     (user) => FilterChip(
                       selected: _selectedUserIds.contains(user.id),

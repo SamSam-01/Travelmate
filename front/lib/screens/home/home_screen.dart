@@ -21,15 +21,21 @@ class _HomeScreenState extends State<HomeScreen> {
   final _activityService = const ActivityService();
   final _plannedOutingService = const PlannedOutingService();
 
-  late Future<_HomeData> _homeDataFuture;
+  _HomeData? _data;
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _homeDataFuture = _loadData();
+    _loadData();
   }
 
-  Future<_HomeData> _loadData() async {
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final currentUserId = supabase.auth.currentUser?.id;
       final results = await Future.wait([
@@ -39,23 +45,68 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]);
 
-      return _HomeData(
-        activities: results[0] as List<Activity>,
-        plannedOutings: results[1] as List<PlannedOuting>,
-        currentUserId: currentUserId,
-      );
+      if (mounted) {
+        setState(() {
+          _data = _HomeData(
+            activities: results[0] as List<Activity>,
+            plannedOutings: results[1] as List<PlannedOuting>,
+            currentUserId: currentUserId,
+          );
+          _isLoading = false;
+        });
+      }
     } on PostgrestException catch (error) {
-      throw _ActivityLoadException(error.message);
+      if (mounted) {
+        setState(() {
+          _error = error.message;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
-      throw const _ActivityLoadException(
-        'Erreur inattendue lors du chargement des activités.',
-      );
+      if (mounted) {
+        setState(() {
+          _error = 'Erreur inattendue lors du chargement des activités.';
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _retryLoad() async {
+  void _handleStatusChanged(String outingId, String newStatus) {
+    if (_data == null) return;
+
+    final currentUserId = _data!.currentUserId ?? '';
+    
+    final updatedOutings = _data!.plannedOutings.map((outing) {
+      if (outing.id == outingId) {
+        final updatedUsers = outing.users.map((user) {
+          if (user.id == currentUserId) {
+            return PlannedOutingUser(
+              id: user.id,
+              name: user.name,
+              status: newStatus,
+            );
+          }
+          return user;
+        }).toList(growable: false);
+
+        return PlannedOuting(
+          id: outing.id,
+          title: outing.title,
+          users: updatedUsers,
+          activities: outing.activities,
+          createdAt: outing.createdAt,
+        );
+      }
+      return outing;
+    }).toList(growable: false);
+
     setState(() {
-      _homeDataFuture = _loadData();
+      _data = _HomeData(
+        activities: _data!.activities,
+        plannedOutings: updatedOutings,
+        currentUserId: _data!.currentUserId,
+      );
     });
   }
 
@@ -68,41 +119,49 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          child: FutureBuilder<_HomeData>(
-            future: _homeDataFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+          child: Builder(
+            builder: (context) {
+              if (_isLoading && _data == null) {
                 return const _HomeScreenLoading();
               }
 
-              if (snapshot.hasError) {
-                final error = snapshot.error;
+              if (_error != null && _data == null) {
                 return _HomeScreenError(
-                  message: error is _ActivityLoadException
-                      ? error.message
-                      : 'Impossible de charger les activités pour le moment.',
-                  onRetry: _retryLoad,
+                  message: _error!,
+                  onRetry: _loadData,
                 );
               }
 
-              final data = snapshot.data ?? const _HomeData();
+              final data = _data ?? const _HomeData();
               final activities = data.activities;
-              if (activities.isEmpty) {
-                return _HomeScreenEmpty(onRetry: _retryLoad);
+              if (activities.isEmpty && !_isLoading) {
+                return _HomeScreenEmpty(onRetry: _loadData);
               }
 
               final items = activities
                   .map((activity) => activity.toCarouselItem())
                   .toList(growable: false);
 
+              final userId = data.currentUserId ?? '';
+              final acceptedOutings = data.plannedOutings
+                  .where((o) => o.isUserAccepted(userId))
+                  .toList(growable: false);
+              final pendingOutings = data.plannedOutings
+                  .where((o) => o.isUserPending(userId))
+                  .toList(growable: false);
+
               final plannedOutingItems = resolvePlannedOutingCarouselItems(
-                plannedOutings: data.plannedOutings,
+                plannedOutings: acceptedOutings,
                 activities: activities,
-                userId: data.currentUserId,
+                userId: userId,
               );
 
               return ListView(
                 children: [
+                  _PendingOutingsSection(
+                    pendingOutings: pendingOutings,
+                    onStatusChanged: _handleStatusChanged,
+                  ),
                   HomeCarousel(
                     title: localizations.activitiesDiscoverTitle,
                     subtitle: localizations.activitiesDiscoverSubtitle,
@@ -266,6 +325,129 @@ class _PlannedOutingsEmptyCard extends StatelessWidget {
               'Aucune sortie n’est encore planifiée. Va dans l’onglet Sorties pour en créer une.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingOutingsSection extends StatelessWidget {
+  const _PendingOutingsSection({
+    required this.pendingOutings,
+    required this.onStatusChanged,
+  });
+
+  final List<PlannedOuting> pendingOutings;
+  final void Function(String outingId, String newStatus) onStatusChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (pendingOutings.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Invitations en attente',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 16),
+        ...pendingOutings.map((outing) => _PendingOutingCard(
+          outing: outing,
+          onStatusChanged: onStatusChanged,
+        )),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _PendingOutingCard extends StatefulWidget {
+  const _PendingOutingCard({
+    required this.outing,
+    required this.onStatusChanged,
+  });
+
+  final PlannedOuting outing;
+  final void Function(String outingId, String newStatus) onStatusChanged;
+
+  @override
+  State<_PendingOutingCard> createState() => _PendingOutingCardState();
+}
+
+class _PendingOutingCardState extends State<_PendingOutingCard> {
+  final _service = const PlannedOutingService();
+  bool _isLoading = false;
+
+  Future<void> _updateStatus(String status) async {
+    setState(() => _isLoading = true);
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        await _service.updateParticipantStatus(
+          outingId: widget.outing.id,
+          userId: userId,
+          status: status,
+        );
+        widget.onStatusChanged(widget.outing.id, status);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.mail_outline, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.outing.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.outing.summaryText,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => _updateStatus('declined'),
+                    child: const Text('Refuser'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () => _updateStatus('accepted'),
+                    child: const Text('Accepter'),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
