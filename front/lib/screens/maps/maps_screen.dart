@@ -20,7 +20,18 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 const String mapsInteractiveStyleUri = MapboxStyles.STANDARD;
 
 class MapsScreen extends StatefulWidget {
-  const MapsScreen({super.key});
+  const MapsScreen({
+    super.key,
+    this.outingMode = false,
+    this.addToOutingLabel,
+    this.onConfirmPlaces,
+    this.initialPlaces,
+  });
+
+  final bool outingMode;
+  final String? addToOutingLabel;
+  final ValueChanged<List<SelectedMapPlace>>? onConfirmPlaces;
+  final List<SelectedMapPlace>? initialPlaces;
 
   @override
   State<MapsScreen> createState() => _MapsScreenState();
@@ -53,6 +64,7 @@ class _MapsScreenState extends State<MapsScreen> {
   String? _searchSessionToken;
   int _searchVersion = 0;
   bool _ignoreSearchChange = false;
+  final List<SelectedMapPlace> _pickedPlaces = [];
 
   late final PlaceSearchRepository? _placeSearchRepository =
       googlePlacesApiKey.isEmpty
@@ -77,6 +89,10 @@ class _MapsScreenState extends State<MapsScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+
+    if (widget.initialPlaces != null) {
+      _pickedPlaces.addAll(widget.initialPlaces!);
+    }
   }
 
   void _handleMapCreated(MapboxMap mapboxMap) {
@@ -334,6 +350,41 @@ class _MapsScreenState extends State<MapsScreen> {
     });
   }
 
+  void _addPlaceToOuting() {
+    final place = _selectedPlace;
+    if (place == null) return;
+
+    final alreadyAdded = _pickedPlaces.any(
+      (p) =>
+          p.name == place.name &&
+          (p.latitude - place.latitude).abs() < 0.0001 &&
+          (p.longitude - place.longitude).abs() < 0.0001,
+    );
+    if (alreadyAdded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${place.name} est déjà dans la sortie.'),
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _pickedPlaces.add(place);
+    });
+  }
+
+  void _removePickedPlace(int index) {
+    setState(() {
+      _pickedPlaces.removeAt(index);
+    });
+  }
+
+  void _confirmPickedPlaces() {
+    widget.onConfirmPlaces?.call(List<SelectedMapPlace>.from(_pickedPlaces));
+  }
+
   Future<void> _clearSelection() async {
     await _clearFeatureSelections();
     if (!mounted) return;
@@ -369,6 +420,23 @@ class _MapsScreenState extends State<MapsScreen> {
       appBar: AppBar(
         title: Text(localizations.mapsTitle),
         actions: [
+          if (widget.outingMode && _pickedPlaces.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: CrazerColors.lime,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                ),
+                onPressed: _confirmPickedPlaces,
+                icon: const Icon(Icons.check, size: 20),
+                label: Text(
+                  'Confirmer (${_pickedPlaces.length})',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
           IconButton(
             onPressed: _resetCamera,
             icon: const Icon(Icons.my_location_outlined),
@@ -403,11 +471,23 @@ class _MapsScreenState extends State<MapsScreen> {
                 ),
               ),
             ),
+          if (widget.outingMode && _pickedPlaces.isNotEmpty)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: PickedPlacesBar(
+                places: _pickedPlaces,
+                onRemove: _removePickedPlace,
+              ),
+            ),
           MapPlaceDetailsSheet(
             place: _selectedPlace,
             onClose: () {
               _clearSelection();
             },
+            onAddToOuting: widget.outingMode ? _addPlaceToOuting : null,
+            addToOutingLabel: widget.addToOutingLabel,
             onExpandedChanged: (isExpanded) {
               if (!mounted || _isPlaceDetailsExpanded == isExpanded) {
                 return;
@@ -444,6 +524,60 @@ class _MapsScreenState extends State<MapsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+@visibleForTesting
+class PickedPlacesBar extends StatelessWidget {
+  const PickedPlacesBar({
+    required this.places,
+    required this.onRemove,
+    super.key,
+  });
+
+  final List<SelectedMapPlace> places;
+  final ValueChanged<int> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    if (places.isEmpty) return const SizedBox.shrink();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Card(
+          color: CrazerColors.surface.withValues(alpha: 0.95),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: List.generate(places.length, (index) {
+                final place = places[index];
+                return Chip(
+                  avatar: const Icon(Icons.place, size: 18),
+                  label: Text(
+                    place.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () => onRemove(index),
+                  backgroundColor: CrazerColors.lime.withValues(alpha: 0.2),
+                  side: BorderSide.none,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
       ),
     );
   }

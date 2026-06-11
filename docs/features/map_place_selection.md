@@ -19,20 +19,24 @@ L'onglet Maps permet maintenant de toucher un point d'intérêt Mapbox ou un lib
 - Si aucun lieu n'est sélectionné, aucun panneau de détail n'est affiché.
 - Si certaines métadonnées sont absentes, seules les informations disponibles sont affichées.
 - Si `GOOGLE_PLACES_API_KEY` est absent, la carte reste utilisable mais la recherche Google est désactivée.
+- **Mode « ajouter à une sortie »** (`outingMode: true`) : la fiche lieu affiche un bouton "Ajouter à la sortie" qui ajoute le lieu sélectionné à une liste temporaire. Une barre de chips affiche les lieux déjà ajoutés avec possibilité de les retirer. Un bouton "Confirmer (N)" dans l'AppBar valide la sélection et retourne la liste au flux de création de sortie.
 
 ## Fichiers concernés
 - `front/lib/screens/maps/maps_screen.dart` — branche les interactions Mapbox et pilote la sélection active.
 - `front/lib/screens/maps/widgets/map_place_search_panel.dart` — affiche la recherche Google Places et la liste de suggestions.
 - `front/lib/screens/maps/models/selected_map_place.dart` — normalise les données d'un lieu sélectionné.
 - `front/lib/screens/maps/widgets/map_place_detail_components.dart` — factorise les briques visuelles de la fiche compacte et de l'écran détaillé.
-- `front/lib/screens/maps/widgets/map_place_details_sheet.dart` — affiche la fiche compacte puis extensible en bas de carte.
+- `front/lib/screens/maps/widgets/map_place_details_sheet.dart` — affiche la fiche compacte puis extensible en bas de carte, avec support du bouton "Ajouter à la sortie".
+- `front/lib/screens/outings/create_outing_flow_screen.dart` — utilise désormais `MapsScreen(outingMode: true)` pour l'étape de choix des activités.
+- `front/lib/screens/maps/models/selected_map_place.dart` — modèle de lieu sélectionné, réutilisé par le mode outing pour identifier les activités créées depuis la carte.
 - `front/lib/data/datasources/google_places_remote_data_source.dart` — interroge l'API Google Places REST avec un field mask contrôlé.
 - `front/lib/data/repositories/place_search_repository_impl.dart` — traduit les erreurs Google Places en `Failure`.
 - `front/lib/domain/usecases/search_place_suggestions_use_case.dart` — encapsule l'autocomplete.
 - `front/lib/domain/usecases/get_place_details_use_case.dart` — encapsule la récupération des détails Essentials.
 - `front/lib/l10n/app_fr.arb` — libellés FR du panneau.
 - `front/lib/l10n/app_en.arb` — libellés EN du panneau.
-- `front/test/screens/maps/map_place_details_sheet_test.dart` — couvre l'état vide, le résumé compact, la fermeture et l'expansion des détails.
+- `front/test/screens/maps/map_place_details_sheet_test.dart` — couvre l'état vide, le résumé compact, la fermeture, l'expansion des détails, et l'affichage / invocation du bouton "Ajouter à la sortie".
+- `front/test/screens/maps/maps_screen_test.dart` — couvre le widget `PickedPlacesBar` (affichage des chips, suppression) et les paramètres de `MapsScreen` en mode outing.
 - `front/test/screens/maps/map_place_search_panel_test.dart` — couvre l'affichage des suggestions.
 - `front/test/data/datasources/google_places_remote_data_source_test.dart` — vérifie le field mask et le parsing des nouveaux détails.
 - `front/test/data/models/place_search_suggestion_model_test.dart` — vérifie le parsing autocomplete.

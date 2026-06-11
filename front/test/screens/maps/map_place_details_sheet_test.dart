@@ -94,6 +94,97 @@ void main() {
     expect(didClose, isTrue);
   });
 
+  testWidgets(
+    'should render add-to-outing button when onAddToOuting is provided',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _buildLocalizedApp(
+          child: Scaffold(
+            body: MapPlaceDetailsSheet(
+              place: const SelectedMapPlace(
+                name: 'Tour Eiffel',
+                sourceLabel: 'Google Places',
+                longitude: 2.2945,
+                latitude: 48.8584,
+              ),
+              onClose: _noop,
+              onAddToOuting: _noop,
+              addToOutingLabel: 'Ajouter à la sortie',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Ajouter à la sortie'), findsOneWidget);
+      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'should invoke onAddToOuting callback when button is tapped',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      var didAddToOuting = false;
+
+      await tester.pumpWidget(
+        _buildLocalizedApp(
+          child: Scaffold(
+            body: MapPlaceDetailsSheet(
+              place: const SelectedMapPlace(
+                name: 'Tour Eiffel',
+                sourceLabel: 'Google Places',
+                longitude: 2.2945,
+                latitude: 48.8584,
+              ),
+              onClose: _noop,
+              onAddToOuting: () {
+                didAddToOuting = true;
+              },
+              addToOutingLabel: 'Ajouter à la sortie',
+            ),
+          ),
+        ),
+      );
+
+      await tester.drag(
+        find.byType(CustomScrollView),
+        const Offset(0, -200),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ajouter à la sortie'));
+      await tester.pump();
+
+      expect(didAddToOuting, isTrue);
+    },
+  );
+
+  testWidgets('should not render add-to-outing button when no callback', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildLocalizedApp(
+        child: Scaffold(
+          body: MapPlaceDetailsSheet(
+            place: const SelectedMapPlace(
+              name: 'Tour Eiffel',
+              sourceLabel: 'Google Places',
+              longitude: 2.2945,
+              latitude: 48.8584,
+            ),
+            onClose: _noop,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Ajouter à la sortie'), findsNothing);
+    expect(find.byIcon(Icons.add_circle_outline), findsNothing);
+  });
+
   testWidgets('should reveal extended details when more details is tapped', (
     WidgetTester tester,
   ) async {

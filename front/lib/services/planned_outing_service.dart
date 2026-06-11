@@ -11,7 +11,7 @@ class PlannedOutingService {
   }) async {
     final outingRows = await supabase
         .from('planned_outings')
-        .select('id, title, created_at')
+        .select('id, title, visibility, scheduled_for, created_at')
         .order('created_at', ascending: false);
 
     if (outingRows.isEmpty) {
@@ -56,11 +56,17 @@ class PlannedOutingService {
     required String title,
     required List<PlannedOutingUser> users,
     required List<PlannedOutingActivity> activities,
+    required OutingVisibility visibility,
+    DateTime? scheduledFor,
   }) async {
     final createdOuting = await supabase
         .from('planned_outings')
-        .insert({'title': title})
-        .select('id, title, created_at')
+        .insert({
+          'title': title,
+          'visibility': visibility.dbValue,
+          'scheduled_for': scheduledFor?.toIso8601String(),
+        })
+        .select('id, title, visibility, scheduled_for, created_at')
         .single();
 
     final outingId = (createdOuting['id'] ?? '').toString();
@@ -73,6 +79,10 @@ class PlannedOutingService {
       title: (createdOuting['title'] ?? title).toString(),
       users: users,
       activities: activities,
+      visibility: OutingVisibilityX.fromValue(createdOuting['visibility']),
+      scheduledFor: DateTime.tryParse(
+        (createdOuting['scheduled_for'] ?? '').toString(),
+      ),
       createdAt: DateTime.tryParse(
         (createdOuting['created_at'] ?? '').toString(),
       ),
