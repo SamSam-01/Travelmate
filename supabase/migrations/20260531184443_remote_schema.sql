@@ -792,12 +792,5 @@ with check ((bucket_id = 'avatars'::text));
   to public
 using ((bucket_id = 'avatars'::text));
 
-CREATE POLICY "Activities are viewable by everyone" 
-ON "public"."activities" FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "Users can view activities of planned outings" 
-ON "public"."planned_outing_activities" FOR SELECT TO authenticated USING (true);
-
-
 
 

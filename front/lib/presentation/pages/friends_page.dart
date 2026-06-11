@@ -5,6 +5,7 @@ import 'package:front/domain/entities/friend_request.dart';
 import 'package:front/domain/entities/user_profile.dart';
 import 'package:front/l10n/app_localizations.dart';
 import 'package:front/presentation/pages/user_search_page.dart';
+import 'package:front/presentation/pages/user_profile_page.dart';
 import 'package:front/presentation/providers/friendship_providers.dart';
 import 'package:front/presentation/widgets/friend_request_widget.dart';
 
@@ -80,6 +81,13 @@ class _FriendsTab extends StatelessWidget {
                 subtitle: friend.displayName == null
                     ? null
                     : Text(friend.displayName!),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UserProfilePage(profile: friend),
+                    ),
+                  );
+                },
               ),
             );
           },
