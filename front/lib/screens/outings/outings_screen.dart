@@ -181,9 +181,6 @@ class _OutingsScreenState extends State<OutingsScreen> {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: PlannedOutingCard(
                             outing: outing,
-                            scheduledForLabel: _formatScheduledFor(
-                              outing.scheduledFor,
-                            ),
                             createdAtLabel: _formatCreatedAt(outing.createdAt),
                           ),
                         ),
@@ -198,7 +195,6 @@ class _OutingsScreenState extends State<OutingsScreen> {
     );
   }
 }
-
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.icon, required this.title});
