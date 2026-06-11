@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:front/l10n/app_localizations.dart';
 import 'package:front/screens/maps/models/selected_map_place.dart';
+import 'package:front/screens/maps/widgets/add_place_to_outing_dialog.dart';
 import 'package:front/screens/maps/widgets/map_place_detail_components.dart';
 import 'package:front/styles/colors.dart';
 
@@ -271,6 +272,21 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AddPlaceToOutingDialog(place: selectedPlace),
+                              );
+                            },
+                            icon: const Icon(Icons.add_location_alt_outlined),
+                            label: const Text('Ajouter à une sortie'),
+                          ),
+                        ),
                         const SizedBox(height: 24),
                       ],
                     ),

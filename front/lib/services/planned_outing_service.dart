@@ -201,23 +201,27 @@ class PlannedOutingService {
       return;
     }
 
-    await supabase
-        .from('planned_outing_activities')
-        .insert(
-          activities
-              .asMap()
-              .entries
-              .where((entry) => entry.value.activityId.isNotEmpty)
-              .map(
-                (entry) => {
-                  'planned_outing_id': outingId,
-                  'activity_id': entry.value.activityId,
-                  'time': entry.value.time,
-                  'sort_order': entry.key,
-                },
-              )
-              .toList(growable: false),
-        );
+    final insertList = <Map<String, dynamic>>[];
+    for (var i = 0; i < activities.length; i++) {
+      var activityId = activities[i].activityId;
+      if (activityId.isEmpty) {
+        final inserted = await supabase
+            .from('activities')
+            .insert(activities[i].asActivity.toInsertJson())
+            .select('id')
+            .single();
+        activityId = (inserted['id'] ?? '').toString();
+      }
+
+      insertList.add({
+        'planned_outing_id': outingId,
+        'activity_id': activityId,
+        'time': activities[i].time,
+        'sort_order': i,
+      });
+    }
+
+    await supabase.from('planned_outing_activities').insert(insertList);
   }
 
   static int _intFromValue(dynamic value) {
@@ -236,6 +240,29 @@ class PlannedOutingService {
         .update({'status': status})
         .eq('planned_outing_id', outingId)
         .eq('profile_id', userId);
+  }
+
+  Future<void> addActivityToOuting({
+    required String outingId,
+    required PlannedOutingActivity activity,
+    required int sortOrder,
+  }) async {
+    var activityId = activity.activityId;
+    if (activityId.isEmpty) {
+      final inserted = await supabase
+          .from('activities')
+          .insert(activity.asActivity.toInsertJson())
+          .select('id')
+          .single();
+      activityId = (inserted['id'] ?? '').toString();
+    }
+
+    await supabase.from('planned_outing_activities').insert({
+      'planned_outing_id': outingId,
+      'activity_id': activityId,
+      'time': activity.time,
+      'sort_order': sortOrder,
+    });
   }
 }
 

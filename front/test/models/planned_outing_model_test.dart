@@ -25,6 +25,27 @@ void main() {
       expect(json['name'], 'Bob');
       expect(json['status'], 'declined');
     });
+
+    test('asActivity creates a valid Activity', () {
+      const outingActivity = PlannedOutingActivity(
+        activityId: 'activity-123',
+        title: 'Title',
+        time: '14:00',
+        subtitle: 'Subtitle',
+        badge: 'Badge',
+        tone: HomeCarouselTone.city,
+        icon: Icons.map,
+      );
+
+      final activity = outingActivity.asActivity;
+
+      expect(activity.id, 'activity-123');
+      expect(activity.title, 'Title');
+      expect(activity.subtitle, 'Subtitle');
+      expect(activity.badge, 'Badge');
+      expect(activity.tone, HomeCarouselTone.city);
+      expect(activity.icon, Icons.map);
+    });
   });
 
   group('PlannedOuting', () {

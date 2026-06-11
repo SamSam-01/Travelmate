@@ -8,57 +8,24 @@ import 'package:front/services/user_service.dart';
 import 'package:front/presentation/widgets/planned_outing_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class OutingsScreen extends StatefulWidget {
+import 'package:front/presentation/providers/outing_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class OutingsScreen extends ConsumerStatefulWidget {
   const OutingsScreen({super.key});
 
   @override
-  State<OutingsScreen> createState() => _OutingsScreenState();
+  ConsumerState<OutingsScreen> createState() => _OutingsScreenState();
 }
 
-class _OutingsScreenState extends State<OutingsScreen> {
-  final _activityService = const ActivityService();
-  final _plannedOutingService = const PlannedOutingService();
-  final _userService = const UserService();
-
-  late Future<_OutingsData> _futureData;
-
+class _OutingsScreenState extends ConsumerState<OutingsScreen> {
   @override
   void initState() {
     super.initState();
-    _futureData = _loadData();
-  }
-
-  Future<_OutingsData> _loadData() async {
-    try {
-      final currentUserId = supabase.auth.currentUser?.id;
-      final results = await Future.wait([
-        _plannedOutingService.fetchPlannedOutings(
-          currentUserId: currentUserId ?? '',
-        ),
-        _userService.fetchUsers(),
-        _activityService.fetchActivities(),
-      ]);
-
-      final outings = results[0] as List<PlannedOuting>;
-
-      return _OutingsData(
-        outings: outings,
-        users: results[1] as List<PlannedOutingUser>,
-        activities: results[2] as List<Activity>,
-      );
-    } on PostgrestException catch (error) {
-      throw _OutingsLoadException(error.message);
-    } catch (_) {
-      throw const _OutingsLoadException(
-        'Impossible de charger les sorties planifiées.',
-      );
-    }
   }
 
   Future<void> _refresh() async {
-    setState(() {
-      _futureData = _loadData();
-    });
+    ref.invalidate(outingsDataProvider);
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -72,12 +39,12 @@ class _OutingsScreenState extends State<OutingsScreen> {
     );
   }
 
-  Future<void> _openCreateSheet(_OutingsData data) async {
+  Future<void> _openCreateSheet(OutingsData data) async {
     final createdOuting = await showModalBottomSheet<PlannedOuting>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => _PlannedOutingFormSheet(
+      builder: (context) => PlannedOutingFormSheet(
         users: data.users,
         activities: data.activities,
       ),
@@ -106,6 +73,8 @@ class _OutingsScreenState extends State<OutingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final asyncData = ref.watch(outingsDataProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sorties'),
@@ -114,24 +83,13 @@ class _OutingsScreenState extends State<OutingsScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<_OutingsData>(
-            future: _futureData,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                final error = snapshot.error;
-                return _OutingsError(
-                  message: error is _OutingsLoadException
-                      ? error.message
-                      : 'Impossible de charger les sorties pour le moment.',
-                  onRetry: _refresh,
-                );
-              }
-
-              final data = snapshot.data ?? const _OutingsData();
+          child: asyncData.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _OutingsError(
+              message: error.toString(),
+              onRetry: _refresh,
+            ),
+            data: (data) {
               final outings = data.outings;
 
               return RefreshIndicator(
@@ -359,48 +317,46 @@ class _OutingsError extends StatelessWidget {
   }
 }
 
-class _OutingsData {
-  const _OutingsData({
-    this.outings = const <PlannedOuting>[],
-    this.users = const <PlannedOutingUser>[],
-    this.activities = const <Activity>[],
-  });
-
-  final List<PlannedOuting> outings;
-  final List<PlannedOutingUser> users;
-  final List<Activity> activities;
-}
-
-class _OutingsLoadException implements Exception {
-  const _OutingsLoadException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-class _PlannedOutingFormSheet extends StatefulWidget {
-  const _PlannedOutingFormSheet({
+class PlannedOutingFormSheet extends StatefulWidget {
+  const PlannedOutingFormSheet({
     required this.users,
     required this.activities,
+    this.initialActivity,
+    super.key,
   });
 
   final List<PlannedOutingUser> users;
   final List<Activity> activities;
+  final Activity? initialActivity;
 
   @override
-  State<_PlannedOutingFormSheet> createState() =>
-      _PlannedOutingFormSheetState();
+  State<PlannedOutingFormSheet> createState() => _PlannedOutingFormSheetState();
 }
 
-class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
+class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
   final _service = const PlannedOutingService();
   final _titleController = TextEditingController();
-  final List<_ActivityDraft> _activityDrafts = [_ActivityDraft()];
+  late final List<_ActivityDraft> _activityDrafts;
+  late final List<Activity> _activities;
   final Set<String> _selectedUserIds = <String>{};
 
   var _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activities = List.of(widget.activities);
+    if (widget.initialActivity != null && !_activities.any((a) => a.id == widget.initialActivity!.id)) {
+      _activities.insert(0, widget.initialActivity!);
+    }
+
+    _activityDrafts = [
+      if (widget.initialActivity != null)
+        _ActivityDraft()..selectedActivity = widget.initialActivity
+      else
+        _ActivityDraft(),
+    ];
+  }
 
   @override
   void dispose() {
@@ -505,8 +461,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
         )
         .whereType<PlannedOutingActivity>()
         .where(
-          (activity) =>
-              activity.activityId.isNotEmpty && activity.time.isNotEmpty,
+          (activity) => activity.time.isNotEmpty,
         )
         .toList(growable: false);
 
@@ -657,7 +612,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
               ],
             ),
             const SizedBox(height: 8),
-            if (widget.activities.isEmpty)
+            if (_activities.isEmpty)
               Text(
                 'Aucune activité disponible pour le moment.',
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -667,7 +622,7 @@ class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ActivityDraftRow(
-                    activities: widget.activities,
+                    activities: _activities,
                     draft: _activityDrafts[index],
                     index: index + 1,
                     canRemove: _activityDrafts.length > 1,
@@ -751,7 +706,8 @@ class _ActivityDraftRow extends StatelessWidget {
               ],
             ),
             DropdownButtonFormField<Activity>(
-              initialValue: draft.selectedActivity,
+              isExpanded: true,
+              value: draft.selectedActivity,
               items: activities
                   .map(
                     (activity) => DropdownMenuItem<Activity>(
@@ -760,11 +716,15 @@ class _ActivityDraftRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(activity.title),
+                          Text(
+                            activity.title,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           if (activity.subtitle.isNotEmpty)
                             Text(
                               activity.subtitle,
                               style: Theme.of(context).textTheme.bodySmall,
+                              overflow: TextOverflow.ellipsis,
                             ),
                         ],
                       ),

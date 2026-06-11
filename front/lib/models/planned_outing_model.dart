@@ -61,6 +61,16 @@ class PlannedOutingActivity {
 
   final String activityId;
 
+  Activity get asActivity => Activity(
+        id: activityId,
+        title: title,
+        subtitle: subtitle,
+        badge: badge,
+        tone: tone,
+        icon: icon,
+        sortOrder: 0,
+      );
+
   final String title;
   final String time;
   final String subtitle;
