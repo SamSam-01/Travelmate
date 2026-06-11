@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
+import 'package:front/screens/maps/maps_screen.dart';
+import 'package:front/screens/maps/models/selected_map_place.dart';
 import 'package:front/screens/outings/widgets/create_outing_components.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/styles/colors.dart';
+import 'package:front/widgets/home_carousel.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CreateOutingFlowScreen extends StatefulWidget {
@@ -29,7 +32,7 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
       _draft.title.isNotEmpty &&
       _draft.selectedUserIds.isNotEmpty &&
       _draft.scheduledFor != null &&
-      _draft.selectedActivityIds.isNotEmpty;
+      _draft.activities.isNotEmpty;
 
   Future<void> _openDetailsStep() async {
     final result = await Navigator.of(context).push<_DetailsStepResult>(
@@ -69,20 +72,59 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
   }
 
   Future<void> _openActivitiesStep() async {
-    final result = await Navigator.of(context).push<Set<String>>(
+    final initialPlaces = _draft.activities
+        .map(
+          (activity) => SelectedMapPlace(
+            name: activity.title,
+            sourceLabel: '',
+            longitude: _parseCoordinateFromId(activity.activityId, isLongitude: true),
+            latitude: _parseCoordinateFromId(activity.activityId, isLongitude: false),
+            address: activity.subtitle.isEmpty ? null : activity.subtitle,
+            category: activity.badge.isEmpty ? null : activity.badge,
+          ),
+        )
+        .toList(growable: false);
+
+    final result = await Navigator.of(context).push<List<SelectedMapPlace>>(
       MaterialPageRoute(
-        builder: (_) => _OutingActivitiesStepPage(
-          activities: widget.activities,
-          initialSelectedActivityIds: _draft.selectedActivityIds,
+        builder: (_) => MapsScreen(
+          outingMode: true,
+          addToOutingLabel: 'Ajouter à la sortie',
+          initialPlaces: initialPlaces,
+          onConfirmPlaces: (places) {
+            Navigator.of(context).pop(places);
+          },
         ),
       ),
     );
 
     if (result == null) return;
 
+    final activities = result
+        .map(
+          (place) => PlannedOutingActivity(
+            title: place.name,
+            time: '',
+            activityId: 'map_${place.latitude}_${place.longitude}',
+            subtitle: place.address ?? '',
+            badge: place.category ?? '',
+            tone: HomeCarouselTone.planned,
+            icon: Icons.place,
+          ),
+        )
+        .toList(growable: false);
+
     setState(() {
-      _draft = _draft.copyWith(selectedActivityIds: result);
+      _draft = _draft.copyWith(activities: activities);
     });
+  }
+
+  static double _parseCoordinateFromId(String activityId, {required bool isLongitude}) {
+    // activityId format: "map_<lat>_<lng>"
+    final parts = activityId.replaceFirst('map_', '').split('_');
+    if (parts.length != 2) return 0;
+    final value = double.tryParse(parts[isLongitude ? 1 : 0]);
+    return value ?? 0;
   }
 
   Future<void> _submit() async {
@@ -98,10 +140,7 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
     final selectedUsers = widget.users
         .where((user) => _draft.selectedUserIds.contains(user.id))
         .toList(growable: false);
-    final selectedActivities = widget.activities
-        .where((activity) => _draft.selectedActivityIds.contains(activity.id))
-        .map((activity) => PlannedOutingActivity.fromActivity(activity, time: ''))
-        .toList(growable: false);
+    final selectedActivities = _draft.activities;
 
     setState(() {
       _saving = true;
@@ -165,8 +204,8 @@ class _CreateOutingFlowScreenState extends State<CreateOutingFlowScreen> {
         CrazerStepActionCard(
           stepNumber: 3,
           title: 'Quelles activités ?',
-          summary: _activitiesSummary(widget.activities, _draft.selectedActivityIds),
-          completed: _draft.selectedActivityIds.isNotEmpty,
+          summary: _activitiesSummary(_draft.activities),
+          completed: _draft.activities.isNotEmpty,
           buttonLabel: 'Choisir les activités',
           onPressed: _openActivitiesStep,
         ),
@@ -404,68 +443,6 @@ class _OutingWhenStepPageState extends State<_OutingWhenStepPage> {
   }
 }
 
-class _OutingActivitiesStepPage extends StatefulWidget {
-  const _OutingActivitiesStepPage({
-    required this.activities,
-    required this.initialSelectedActivityIds,
-  });
-
-  final List<Activity> activities;
-  final Set<String> initialSelectedActivityIds;
-
-  @override
-  State<_OutingActivitiesStepPage> createState() => _OutingActivitiesStepPageState();
-}
-
-class _OutingActivitiesStepPageState extends State<_OutingActivitiesStepPage> {
-  late Set<String> _selectedActivityIds;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedActivityIds = <String>{...widget.initialSelectedActivityIds};
-  }
-
-  void _confirm() {
-    if (_selectedActivityIds.isEmpty) {
-      showCrazerSnackBar(
-        context,
-        'Sélectionne au moins une activité.',
-        isError: true,
-      );
-      return;
-    }
-    Navigator.of(context).pop(_selectedActivityIds);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CrazerStepScaffold(
-      title: 'Étape 3 — Activités',
-      children: [
-        for (final activity in widget.activities)
-          CheckboxListTile(
-            value: _selectedActivityIds.contains(activity.id),
-            activeColor: CrazerColors.lime,
-            checkColor: Colors.black,
-            title: Text(activity.title),
-            subtitle: activity.subtitle.isEmpty ? null : Text(activity.subtitle),
-            onChanged: (selected) {
-              setState(() {
-                if (selected ?? false) {
-                  _selectedActivityIds.add(activity.id);
-                } else {
-                  _selectedActivityIds.remove(activity.id);
-                }
-              });
-            },
-          ),
-        const SizedBox(height: 8),
-        CrazerPrimaryButton(label: 'Confirmer', onPressed: _confirm),
-      ],
-    );
-  }
-}
 
 class _CreateOutingDraft {
   const _CreateOutingDraft({
@@ -473,28 +450,28 @@ class _CreateOutingDraft {
     this.visibility = OutingVisibility.private,
     this.scheduledFor,
     this.selectedUserIds = const <String>{},
-    this.selectedActivityIds = const <String>{},
+    this.activities = const <PlannedOutingActivity>[],
   });
 
   final String title;
   final OutingVisibility visibility;
   final DateTime? scheduledFor;
   final Set<String> selectedUserIds;
-  final Set<String> selectedActivityIds;
+  final List<PlannedOutingActivity> activities;
 
   _CreateOutingDraft copyWith({
     String? title,
     OutingVisibility? visibility,
     DateTime? scheduledFor,
     Set<String>? selectedUserIds,
-    Set<String>? selectedActivityIds,
+    List<PlannedOutingActivity>? activities,
   }) {
     return _CreateOutingDraft(
       title: title ?? this.title,
       visibility: visibility ?? this.visibility,
       scheduledFor: scheduledFor ?? this.scheduledFor,
       selectedUserIds: selectedUserIds ?? this.selectedUserIds,
-      selectedActivityIds: selectedActivityIds ?? this.selectedActivityIds,
+      activities: activities ?? this.activities,
     );
   }
 }
@@ -529,15 +506,12 @@ String _detailsSummary(List<PlannedOutingUser> users, _CreateOutingDraft draft) 
   return '${draft.title.isEmpty ? 'Sans titre' : draft.title} • ${draft.visibility.label} • $participants${selectedNames.isEmpty ? '' : ' ($selectedNames)'}';
 }
 
-String _activitiesSummary(List<Activity> activities, Set<String> selectedIds) {
-  if (selectedIds.isEmpty) return 'Aucune activité sélectionnée.';
+String _activitiesSummary(List<PlannedOutingActivity> activities) {
+  if (activities.isEmpty) return 'Aucune activité sélectionnée.';
 
-  final selectedTitles = activities
-      .where((activity) => selectedIds.contains(activity.id))
-      .map((activity) => activity.title)
-      .take(3)
-      .join(', ');
-  return '${selectedIds.length} activité${selectedIds.length > 1 ? 's' : ''} • $selectedTitles';
+  final selectedTitles =
+      activities.map((a) => a.title).take(3).join(', ');
+  return '${activities.length} activité${activities.length > 1 ? 's' : ''} • $selectedTitles';
 }
 
 String _formatDateTime(DateTime value) {

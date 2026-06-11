@@ -12,6 +12,8 @@ class MapPlaceDetailsSheet extends StatefulWidget {
     required this.onClose,
     this.onExpandedChanged,
     this.onExpansionProgressChanged,
+    this.onAddToOuting,
+    this.addToOutingLabel,
     super.key,
   });
 
@@ -19,6 +21,8 @@ class MapPlaceDetailsSheet extends StatefulWidget {
   final VoidCallback onClose;
   final ValueChanged<bool>? onExpandedChanged;
   final ValueChanged<double>? onExpansionProgressChanged;
+  final VoidCallback? onAddToOuting;
+  final String? addToOutingLabel;
 
   @override
   State<MapPlaceDetailsSheet> createState() => _MapPlaceDetailsSheetState();
@@ -267,6 +271,31 @@ class _MapPlaceDetailsSheetState extends State<MapPlaceDetailsSheet> {
                                       color: CrazerColors.textSecondary,
                                       height: 1.3,
                                     ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (widget.onAddToOuting != null) ...[
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: CrazerColors.lime,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: widget.onAddToOuting,
+                              icon: const Icon(Icons.add_circle_outline, size: 22),
+                              label: Text(
+                                widget.addToOutingLabel ?? 'Ajouter à la sortie',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
                               ),
                             ),
                           ),
