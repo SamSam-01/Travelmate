@@ -337,6 +337,7 @@ class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
   final _service = const PlannedOutingService();
   final _titleController = TextEditingController();
   late final List<_ActivityDraft> _activityDrafts;
+  late final List<Activity> _activities;
   final Set<String> _selectedUserIds = <String>{};
 
   var _saving = false;
@@ -344,6 +345,11 @@ class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
   @override
   void initState() {
     super.initState();
+    _activities = List.of(widget.activities);
+    if (widget.initialActivity != null && !_activities.any((a) => a.id == widget.initialActivity!.id)) {
+      _activities.insert(0, widget.initialActivity!);
+    }
+
     _activityDrafts = [
       if (widget.initialActivity != null)
         _ActivityDraft()..selectedActivity = widget.initialActivity
@@ -455,8 +461,7 @@ class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
         )
         .whereType<PlannedOutingActivity>()
         .where(
-          (activity) =>
-              activity.activityId.isNotEmpty && activity.time.isNotEmpty,
+          (activity) => activity.time.isNotEmpty,
         )
         .toList(growable: false);
 
@@ -607,7 +612,7 @@ class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
               ],
             ),
             const SizedBox(height: 8),
-            if (widget.activities.isEmpty)
+            if (_activities.isEmpty)
               Text(
                 'Aucune activité disponible pour le moment.',
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -617,7 +622,7 @@ class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ActivityDraftRow(
-                    activities: widget.activities,
+                    activities: _activities,
                     draft: _activityDrafts[index],
                     index: index + 1,
                     canRemove: _activityDrafts.length > 1,
