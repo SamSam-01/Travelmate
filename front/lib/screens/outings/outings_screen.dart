@@ -706,7 +706,8 @@ class _ActivityDraftRow extends StatelessWidget {
               ],
             ),
             DropdownButtonFormField<Activity>(
-              initialValue: draft.selectedActivity,
+              isExpanded: true,
+              value: draft.selectedActivity,
               items: activities
                   .map(
                     (activity) => DropdownMenuItem<Activity>(
@@ -715,11 +716,15 @@ class _ActivityDraftRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(activity.title),
+                          Text(
+                            activity.title,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           if (activity.subtitle.isNotEmpty)
                             Text(
                               activity.subtitle,
                               style: Theme.of(context).textTheme.bodySmall,
+                              overflow: TextOverflow.ellipsis,
                             ),
                         ],
                       ),

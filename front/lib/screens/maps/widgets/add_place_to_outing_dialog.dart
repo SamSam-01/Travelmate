@@ -82,8 +82,6 @@ class _AddPlaceToOutingDialogState extends ConsumerState<AddPlaceToOutingDialog>
 
     final initialActivity = _createActivityFromPlace();
 
-    Navigator.of(context).pop(); // Close dialog first
-
     final createdOuting = await showModalBottomSheet<PlannedOuting>(
       context: context,
       isScrollControlled: true,
@@ -95,9 +93,13 @@ class _AddPlaceToOutingDialogState extends ConsumerState<AddPlaceToOutingDialog>
       ),
     );
 
+    if (!mounted) return;
+
     if (createdOuting != null) {
       ref.invalidate(outingsDataProvider);
     }
+
+    Navigator.of(context).pop(); // Close dialog after
   }
 
   Future<void> _handleAddToExisting(PlannedOuting outing) async {
