@@ -8,17 +8,19 @@ import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/services/user_service.dart';
 import 'package:front/widgets/home_carousel.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:front/presentation/providers/outing_providers.dart';
 
-class AddPlaceToOutingDialog extends StatefulWidget {
+class AddPlaceToOutingDialog extends ConsumerStatefulWidget {
   const AddPlaceToOutingDialog({required this.place, super.key});
 
   final SelectedMapPlace place;
 
   @override
-  State<AddPlaceToOutingDialog> createState() => _AddPlaceToOutingDialogState();
+  ConsumerState<AddPlaceToOutingDialog> createState() => _AddPlaceToOutingDialogState();
 }
 
-class _AddPlaceToOutingDialogState extends State<AddPlaceToOutingDialog> {
+class _AddPlaceToOutingDialogState extends ConsumerState<AddPlaceToOutingDialog> {
   final _activityService = const ActivityService();
   final _plannedOutingService = const PlannedOutingService();
   final _userService = const UserService();
@@ -82,7 +84,7 @@ class _AddPlaceToOutingDialogState extends State<AddPlaceToOutingDialog> {
 
     Navigator.of(context).pop(); // Close dialog first
 
-    await showModalBottomSheet<PlannedOuting>(
+    final createdOuting = await showModalBottomSheet<PlannedOuting>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -92,15 +94,15 @@ class _AddPlaceToOutingDialogState extends State<AddPlaceToOutingDialog> {
         initialActivity: initialActivity,
       ),
     );
+
+    if (createdOuting != null) {
+      ref.invalidate(outingsDataProvider);
+    }
   }
 
   Future<void> _handleAddToExisting(PlannedOuting outing) async {
-    final time = await _pickTime();
-    if (time == null || !mounted) return;
-
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    final formattedTime = '$hour:$minute'; // Or date if needed, but time is usually ok or current date + time
+    final formattedTime = await _pickDateTime();
+    if (formattedTime == null || !mounted) return;
 
     try {
       // Create activity model
@@ -117,24 +119,48 @@ class _AddPlaceToOutingDialogState extends State<AddPlaceToOutingDialog> {
       );
 
       if (!mounted) return;
+      ref.invalidate(outingsDataProvider);
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lieu ajouté à la sortie "${outing.title}"')),
       );
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Add activity error: $e');
+      debugPrint(st.toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur lors de l'ajout à la sortie")),
+        SnackBar(content: Text("Erreur lors de l'ajout à la sortie : $e")),
       );
     }
   }
 
-  Future<TimeOfDay?> _pickTime() async {
-    return showTimePicker(
+  Future<String?> _pickDateTime() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+      helpText: "Sélectionnez la date pour cette activité",
+    );
+
+    if (pickedDate == null || !mounted) return null;
+
+    final pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
       helpText: "Sélectionnez l'heure pour cette activité",
     );
+
+    if (pickedTime == null || !mounted) return null;
+
+    final day = pickedDate.day.toString().padLeft(2, '0');
+    final month = pickedDate.month.toString().padLeft(2, '0');
+    final year = pickedDate.year.toString();
+    final hour = pickedTime.hour.toString().padLeft(2, '0');
+    final minute = pickedTime.minute.toString().padLeft(2, '0');
+
+    return '$day/$month/$year $hour:$minute';
   }
 
   @override

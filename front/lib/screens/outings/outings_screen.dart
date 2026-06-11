@@ -8,57 +8,24 @@ import 'package:front/services/user_service.dart';
 import 'package:front/presentation/widgets/planned_outing_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class OutingsScreen extends StatefulWidget {
+import 'package:front/presentation/providers/outing_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class OutingsScreen extends ConsumerStatefulWidget {
   const OutingsScreen({super.key});
 
   @override
-  State<OutingsScreen> createState() => _OutingsScreenState();
+  ConsumerState<OutingsScreen> createState() => _OutingsScreenState();
 }
 
-class _OutingsScreenState extends State<OutingsScreen> {
-  final _activityService = const ActivityService();
-  final _plannedOutingService = const PlannedOutingService();
-  final _userService = const UserService();
-
-  late Future<_OutingsData> _futureData;
-
+class _OutingsScreenState extends ConsumerState<OutingsScreen> {
   @override
   void initState() {
     super.initState();
-    _futureData = _loadData();
-  }
-
-  Future<_OutingsData> _loadData() async {
-    try {
-      final currentUserId = supabase.auth.currentUser?.id;
-      final results = await Future.wait([
-        _plannedOutingService.fetchPlannedOutings(
-          currentUserId: currentUserId ?? '',
-        ),
-        _userService.fetchUsers(),
-        _activityService.fetchActivities(),
-      ]);
-
-      final outings = results[0] as List<PlannedOuting>;
-
-      return _OutingsData(
-        outings: outings,
-        users: results[1] as List<PlannedOutingUser>,
-        activities: results[2] as List<Activity>,
-      );
-    } on PostgrestException catch (error) {
-      throw _OutingsLoadException(error.message);
-    } catch (_) {
-      throw const _OutingsLoadException(
-        'Impossible de charger les sorties planifiées.',
-      );
-    }
   }
 
   Future<void> _refresh() async {
-    setState(() {
-      _futureData = _loadData();
-    });
+    ref.invalidate(outingsDataProvider);
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -72,7 +39,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
     );
   }
 
-  Future<void> _openCreateSheet(_OutingsData data) async {
+  Future<void> _openCreateSheet(OutingsData data) async {
     final createdOuting = await showModalBottomSheet<PlannedOuting>(
       context: context,
       isScrollControlled: true,
@@ -106,6 +73,8 @@ class _OutingsScreenState extends State<OutingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final asyncData = ref.watch(outingsDataProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sorties'),
@@ -114,24 +83,13 @@ class _OutingsScreenState extends State<OutingsScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: FutureBuilder<_OutingsData>(
-            future: _futureData,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                final error = snapshot.error;
-                return _OutingsError(
-                  message: error is _OutingsLoadException
-                      ? error.message
-                      : 'Impossible de charger les sorties pour le moment.',
-                  onRetry: _refresh,
-                );
-              }
-
-              final data = snapshot.data ?? const _OutingsData();
+          child: asyncData.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _OutingsError(
+              message: error.toString(),
+              onRetry: _refresh,
+            ),
+            data: (data) {
               final outings = data.outings;
 
               return RefreshIndicator(
@@ -357,27 +315,6 @@ class _OutingsError extends StatelessWidget {
       ),
     );
   }
-}
-
-class _OutingsData {
-  const _OutingsData({
-    this.outings = const <PlannedOuting>[],
-    this.users = const <PlannedOutingUser>[],
-    this.activities = const <Activity>[],
-  });
-
-  final List<PlannedOuting> outings;
-  final List<PlannedOutingUser> users;
-  final List<Activity> activities;
-}
-
-class _OutingsLoadException implements Exception {
-  const _OutingsLoadException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }
 
 class PlannedOutingFormSheet extends StatefulWidget {
