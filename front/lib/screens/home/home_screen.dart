@@ -21,15 +21,21 @@ class _HomeScreenState extends State<HomeScreen> {
   final _activityService = const ActivityService();
   final _plannedOutingService = const PlannedOutingService();
 
-  late Future<_HomeData> _homeDataFuture;
+  _HomeData? _data;
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _homeDataFuture = _loadData();
+    _loadData();
   }
 
-  Future<_HomeData> _loadData() async {
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final currentUserId = supabase.auth.currentUser?.id;
       final results = await Future.wait([
@@ -39,23 +45,68 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ]);
 
-      return _HomeData(
-        activities: results[0] as List<Activity>,
-        plannedOutings: results[1] as List<PlannedOuting>,
-        currentUserId: currentUserId,
-      );
+      if (mounted) {
+        setState(() {
+          _data = _HomeData(
+            activities: results[0] as List<Activity>,
+            plannedOutings: results[1] as List<PlannedOuting>,
+            currentUserId: currentUserId,
+          );
+          _isLoading = false;
+        });
+      }
     } on PostgrestException catch (error) {
-      throw _ActivityLoadException(error.message);
+      if (mounted) {
+        setState(() {
+          _error = error.message;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
-      throw const _ActivityLoadException(
-        'Erreur inattendue lors du chargement des activités.',
-      );
+      if (mounted) {
+        setState(() {
+          _error = 'Erreur inattendue lors du chargement des activités.';
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _retryLoad() async {
+  void _handleStatusChanged(String outingId, String newStatus) {
+    if (_data == null) return;
+
+    final currentUserId = _data!.currentUserId ?? '';
+    
+    final updatedOutings = _data!.plannedOutings.map((outing) {
+      if (outing.id == outingId) {
+        final updatedUsers = outing.users.map((user) {
+          if (user.id == currentUserId) {
+            return PlannedOutingUser(
+              id: user.id,
+              name: user.name,
+              status: newStatus,
+            );
+          }
+          return user;
+        }).toList(growable: false);
+
+        return PlannedOuting(
+          id: outing.id,
+          title: outing.title,
+          users: updatedUsers,
+          activities: outing.activities,
+          createdAt: outing.createdAt,
+        );
+      }
+      return outing;
+    }).toList(growable: false);
+
     setState(() {
-      _homeDataFuture = _loadData();
+      _data = _HomeData(
+        activities: _data!.activities,
+        plannedOutings: updatedOutings,
+        currentUserId: _data!.currentUserId,
+      );
     });
   }
 
@@ -68,27 +119,23 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-          child: FutureBuilder<_HomeData>(
-            future: _homeDataFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+          child: Builder(
+            builder: (context) {
+              if (_isLoading && _data == null) {
                 return const _HomeScreenLoading();
               }
 
-              if (snapshot.hasError) {
-                final error = snapshot.error;
+              if (_error != null && _data == null) {
                 return _HomeScreenError(
-                  message: error is _ActivityLoadException
-                      ? error.message
-                      : 'Impossible de charger les activités pour le moment.',
-                  onRetry: _retryLoad,
+                  message: _error!,
+                  onRetry: _loadData,
                 );
               }
 
-              final data = snapshot.data ?? const _HomeData();
+              final data = _data ?? const _HomeData();
               final activities = data.activities;
-              if (activities.isEmpty) {
-                return _HomeScreenEmpty(onRetry: _retryLoad);
+              if (activities.isEmpty && !_isLoading) {
+                return _HomeScreenEmpty(onRetry: _loadData);
               }
 
               final items = activities
@@ -113,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _PendingOutingsSection(
                     pendingOutings: pendingOutings,
-                    onStatusChanged: _retryLoad,
+                    onStatusChanged: _handleStatusChanged,
                   ),
                   HomeCarousel(
                     title: localizations.activitiesDiscoverTitle,
@@ -292,7 +339,7 @@ class _PendingOutingsSection extends StatelessWidget {
   });
 
   final List<PlannedOuting> pendingOutings;
-  final VoidCallback onStatusChanged;
+  final void Function(String outingId, String newStatus) onStatusChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -323,7 +370,7 @@ class _PendingOutingCard extends StatefulWidget {
   });
 
   final PlannedOuting outing;
-  final VoidCallback onStatusChanged;
+  final void Function(String outingId, String newStatus) onStatusChanged;
 
   @override
   State<_PendingOutingCard> createState() => _PendingOutingCardState();
@@ -343,7 +390,7 @@ class _PendingOutingCardState extends State<_PendingOutingCard> {
           userId: userId,
           status: status,
         );
-        widget.onStatusChanged();
+        widget.onStatusChanged(widget.outing.id, status);
       }
     } catch (e) {
       if (mounted) {
