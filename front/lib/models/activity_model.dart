@@ -48,6 +48,18 @@ class Activity {
     );
   }
 
+  Map<String, dynamic> toInsertJson() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'title': title,
+      'subtitle': subtitle,
+      'badge': badge,
+      'tone': tone.name,
+      'icon_key': _keyFromIcon(icon) ?? 'location_city_outlined',
+      'sort_order': sortOrder,
+    };
+  }
+
   static int _intFromValue(dynamic value) {
     if (value is int) return value;
     if (value is double) return value.toInt();
@@ -93,5 +105,17 @@ class Activity {
         HomeCarouselTone.water => Icons.water_outlined,
       },
     };
+  }
+
+  static String? _keyFromIcon(IconData icon) {
+    if (icon == Icons.terrain_outlined) return 'terrain_outlined';
+    if (icon == Icons.location_city_outlined) return 'location_city_outlined';
+    if (icon == Icons.restaurant_outlined) return 'restaurant_outlined';
+    if (icon == Icons.museum_outlined) return 'museum_outlined';
+    if (icon == Icons.hiking_outlined) return 'hiking_outlined';
+    if (icon == Icons.event_available_outlined) return 'event_available_outlined';
+    if (icon == Icons.dinner_dining_outlined) return 'dinner_dining_outlined';
+    if (icon == Icons.water_outlined) return 'water_outlined';
+    return null;
   }
 }

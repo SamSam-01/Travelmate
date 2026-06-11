@@ -77,7 +77,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => _PlannedOutingFormSheet(
+      builder: (context) => PlannedOutingFormSheet(
         users: data.users,
         activities: data.activities,
       ),
@@ -380,27 +380,40 @@ class _OutingsLoadException implements Exception {
   String toString() => message;
 }
 
-class _PlannedOutingFormSheet extends StatefulWidget {
-  const _PlannedOutingFormSheet({
+class PlannedOutingFormSheet extends StatefulWidget {
+  const PlannedOutingFormSheet({
     required this.users,
     required this.activities,
+    this.initialActivity,
+    super.key,
   });
 
   final List<PlannedOutingUser> users;
   final List<Activity> activities;
+  final Activity? initialActivity;
 
   @override
-  State<_PlannedOutingFormSheet> createState() =>
-      _PlannedOutingFormSheetState();
+  State<PlannedOutingFormSheet> createState() => _PlannedOutingFormSheetState();
 }
 
-class _PlannedOutingFormSheetState extends State<_PlannedOutingFormSheet> {
+class _PlannedOutingFormSheetState extends State<PlannedOutingFormSheet> {
   final _service = const PlannedOutingService();
   final _titleController = TextEditingController();
-  final List<_ActivityDraft> _activityDrafts = [_ActivityDraft()];
+  late final List<_ActivityDraft> _activityDrafts;
   final Set<String> _selectedUserIds = <String>{};
 
   var _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activityDrafts = [
+      if (widget.initialActivity != null)
+        _ActivityDraft()..selectedActivity = widget.initialActivity
+      else
+        _ActivityDraft(),
+    ];
+  }
 
   @override
   void dispose() {
