@@ -95,14 +95,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   .map((activity) => activity.toCarouselItem())
                   .toList(growable: false);
 
+              final userId = data.currentUserId ?? '';
+              final acceptedOutings = data.plannedOutings
+                  .where((o) => o.isUserAccepted(userId))
+                  .toList(growable: false);
+              final pendingOutings = data.plannedOutings
+                  .where((o) => o.isUserPending(userId))
+                  .toList(growable: false);
+
               final plannedOutingItems = resolvePlannedOutingCarouselItems(
-                plannedOutings: data.plannedOutings,
+                plannedOutings: acceptedOutings,
                 activities: activities,
-                userId: data.currentUserId,
+                userId: userId,
               );
 
               return ListView(
                 children: [
+                  _PendingOutingsSection(
+                    pendingOutings: pendingOutings,
+                    onStatusChanged: _retryLoad,
+                  ),
                   HomeCarousel(
                     title: localizations.activitiesDiscoverTitle,
                     subtitle: localizations.activitiesDiscoverSubtitle,
@@ -266,6 +278,129 @@ class _PlannedOutingsEmptyCard extends StatelessWidget {
               'Aucune sortie n’est encore planifiée. Va dans l’onglet Sorties pour en créer une.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingOutingsSection extends StatelessWidget {
+  const _PendingOutingsSection({
+    required this.pendingOutings,
+    required this.onStatusChanged,
+  });
+
+  final List<PlannedOuting> pendingOutings;
+  final VoidCallback onStatusChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (pendingOutings.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Invitations en attente',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 16),
+        ...pendingOutings.map((outing) => _PendingOutingCard(
+          outing: outing,
+          onStatusChanged: onStatusChanged,
+        )),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _PendingOutingCard extends StatefulWidget {
+  const _PendingOutingCard({
+    required this.outing,
+    required this.onStatusChanged,
+  });
+
+  final PlannedOuting outing;
+  final VoidCallback onStatusChanged;
+
+  @override
+  State<_PendingOutingCard> createState() => _PendingOutingCardState();
+}
+
+class _PendingOutingCardState extends State<_PendingOutingCard> {
+  final _service = const PlannedOutingService();
+  bool _isLoading = false;
+
+  Future<void> _updateStatus(String status) async {
+    setState(() => _isLoading = true);
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        await _service.updateParticipantStatus(
+          outingId: widget.outing.id,
+          userId: userId,
+          status: status,
+        );
+        widget.onStatusChanged();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.mail_outline, color: scheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.outing.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.outing.summaryText,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => _updateStatus('declined'),
+                    child: const Text('Refuser'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () => _updateStatus('accepted'),
+                    child: const Text('Accepter'),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

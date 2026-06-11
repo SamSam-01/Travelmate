@@ -3,10 +3,15 @@ import 'package:front/models/activity_model.dart';
 import 'package:front/widgets/home_carousel.dart';
 
 class PlannedOutingUser {
-  const PlannedOutingUser({required this.id, required this.name});
+  const PlannedOutingUser({
+    required this.id,
+    required this.name,
+    this.status = 'pending',
+  });
 
   final String id;
   final String name;
+  final String status;
 
   factory PlannedOutingUser.fromJson(dynamic json) {
     if (json is String) {
@@ -18,13 +23,18 @@ class PlannedOutingUser {
         id: (json['id'] ?? '').toString(),
         name: (json['name'] ?? json['username'] ?? json['full_name'] ?? '')
             .toString(),
+        status: (json['status'] ?? 'pending').toString(),
       );
     }
 
     return PlannedOutingUser(id: '', name: json?.toString() ?? '');
   }
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'status': status,
+      };
 }
 
 class PlannedOutingActivity {
@@ -178,6 +188,24 @@ class PlannedOuting {
     }
 
     return users.any((user) => user.id == normalizedUserId);
+  }
+
+  bool isUserPending(String userId) {
+    final normalizedUserId = userId.trim();
+    if (normalizedUserId.isEmpty) {
+      return false;
+    }
+
+    return users.any((user) => user.id == normalizedUserId && user.status == 'pending');
+  }
+
+  bool isUserAccepted(String userId) {
+    final normalizedUserId = userId.trim();
+    if (normalizedUserId.isEmpty) {
+      return false;
+    }
+
+    return users.any((user) => user.id == normalizedUserId && user.status == 'accepted');
   }
 
   Map<String, dynamic> toInsertJson() => {'title': title};
