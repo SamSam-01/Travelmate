@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:front/commons.dart';
+import 'package:front/main.dart';
 import 'package:front/models/activity_model.dart';
 import 'package:front/models/planned_outing_model.dart';
 import 'package:front/main.dart';
@@ -7,8 +7,7 @@ import 'package:front/screens/outings/create_outing_flow_screen.dart';
 import 'package:front/services/activity_service.dart';
 import 'package:front/services/planned_outing_service.dart';
 import 'package:front/services/user_service.dart';
-import 'package:front/utils/planned_outings_helper.dart';
-import 'package:front/styles/colors.dart';
+import 'package:front/presentation/widgets/planned_outing_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OutingsScreen extends StatefulWidget {
@@ -180,7 +179,7 @@ class _OutingsScreenState extends State<OutingsScreen> {
                       ...outings.map(
                         (outing) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _PlannedOutingCard(
+                          child: PlannedOutingCard(
                             outing: outing,
                             scheduledForLabel: _formatScheduledFor(
                               outing.scheduledFor,
@@ -200,205 +199,6 @@ class _OutingsScreenState extends State<OutingsScreen> {
   }
 }
 
-class _PlannedOutingCard extends StatelessWidget {
-  const _PlannedOutingCard({
-    required this.outing,
-    required this.scheduledForLabel,
-    required this.createdAtLabel,
-  });
-
-  final PlannedOuting outing;
-  final String scheduledForLabel;
-  final String createdAtLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: 0,
-      color: CrazerColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: CrazerColors.border.withValues(alpha: 0.85)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        outing.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _InfoPill(
-                            icon: Icons.calendar_month_outlined,
-                            label: scheduledForLabel,
-                            accent: true,
-                          ),
-                          _InfoPill(
-                            icon: Icons.schedule_outlined,
-                            label: createdAtLabel,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: CrazerColors.lime.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.event_available_outlined,
-                    color: CrazerColors.lime,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoPill(
-                  icon: outing.visibility == OutingVisibility.public
-                      ? Icons.public
-                      : Icons.lock_outline,
-                  label: 'Visibilité ${outing.visibility.label}',
-                ),
-                _InfoPill(
-                  icon: Icons.groups_2_outlined,
-                  label:
-                      '${outing.users.length} participant${outing.users.length > 1 ? 's' : ''}',
-                ),
-                _InfoPill(
-                  icon: Icons.local_activity_outlined,
-                  label:
-                      '${outing.activities.length} activité${outing.activities.length > 1 ? 's' : ''}',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _SectionLabel(
-              icon: Icons.people_alt_outlined,
-              title: 'Participants',
-            ),
-            const SizedBox(height: 10),
-            if (outing.users.isEmpty)
-              _EmptyVisualHint(
-                icon: Icons.person_off_outlined,
-                label: 'Aucun participant',
-              )
-            else
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: outing.users
-                    .map(
-                      (user) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest.withValues(
-                            alpha: 0.32,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: scheme.outlineVariant.withValues(
-                              alpha: 0.45,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircleAvatar(
-                              radius: 14,
-                              backgroundColor: CrazerColors.lime.withValues(
-                                alpha: 0.2,
-                              ),
-                              child: Text(
-                                _initials(user.name),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(user.name),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-            const SizedBox(height: 16),
-            _SectionLabel(
-              icon: Icons.route_outlined,
-              title: 'Programme des activités',
-            ),
-            const SizedBox(height: 10),
-            if (outing.activities.isEmpty)
-              _EmptyVisualHint(
-                icon: Icons.event_busy_outlined,
-                label: 'Aucune activité renseignée',
-              )
-            else
-              Column(
-                children: [
-                  for (var index = 0; index < outing.activities.length; index++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _ActivityVisualItem(
-                        title: outing.activities[index].title,
-                        time: outing.activities[index].time,
-                        isLast: index == outing.activities.length - 1,
-                      ),
-                    ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _initials(String name) {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return '?';
-    String initial(String value) =>
-        value.isEmpty ? '?' : value[0].toUpperCase();
-    if (parts.length == 1) return initial(parts.first);
-    return '${initial(parts.first)}${initial(parts.last)}';
-  }
-}
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.icon, required this.title});

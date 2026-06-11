@@ -200,6 +200,168 @@ abstract class AppLocalizations {
   /// **'Recentrer'**
   String get mapsRecenterTooltip;
 
+  /// No description provided for @mapsPlaceDetailsEmptyTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionnez un lieu'**
+  String get mapsPlaceDetailsEmptyTitle;
+
+  /// No description provided for @mapsPlaceDetailsEmptyMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez un point d\'intérêt ou un libellé sur la carte pour afficher ses informations.'**
+  String get mapsPlaceDetailsEmptyMessage;
+
+  /// No description provided for @mapsPlaceDetailsSourcePoi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Point d\'intérêt'**
+  String get mapsPlaceDetailsSourcePoi;
+
+  /// No description provided for @mapsPlaceDetailsSourcePlace.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieu'**
+  String get mapsPlaceDetailsSourcePlace;
+
+  /// No description provided for @mapsPlaceDetailsSourceGoogle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Google Places'**
+  String get mapsPlaceDetailsSourceGoogle;
+
+  /// No description provided for @mapsPlaceDetailsAddress.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse'**
+  String get mapsPlaceDetailsAddress;
+
+  /// No description provided for @mapsPlaceDetailsPlaceId.
+  ///
+  /// In fr, this message translates to:
+  /// **'Place ID'**
+  String get mapsPlaceDetailsPlaceId;
+
+  /// No description provided for @mapsPlaceDetailsRating.
+  ///
+  /// In fr, this message translates to:
+  /// **'Note'**
+  String get mapsPlaceDetailsRating;
+
+  /// No description provided for @mapsPlaceDetailsReviewCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Avis'**
+  String get mapsPlaceDetailsReviewCount;
+
+  /// No description provided for @mapsPlaceDetailsOpenNow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Statut'**
+  String get mapsPlaceDetailsOpenNow;
+
+  /// No description provided for @mapsPlaceDetailsOpen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvert'**
+  String get mapsPlaceDetailsOpen;
+
+  /// No description provided for @mapsPlaceDetailsClosed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermé'**
+  String get mapsPlaceDetailsClosed;
+
+  /// No description provided for @mapsPlaceDetailsOpeningHours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Horaires d\'ouverture'**
+  String get mapsPlaceDetailsOpeningHours;
+
+  /// No description provided for @mapsPlaceDetailsMoreDetails.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir plus de détails'**
+  String get mapsPlaceDetailsMoreDetails;
+
+  /// No description provided for @mapsPlaceDetailsCategory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Catégorie'**
+  String get mapsPlaceDetailsCategory;
+
+  /// No description provided for @mapsPlaceDetailsGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe'**
+  String get mapsPlaceDetailsGroup;
+
+  /// No description provided for @mapsPlaceDetailsIcon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Icône'**
+  String get mapsPlaceDetailsIcon;
+
+  /// No description provided for @mapsPlaceDetailsTransitMode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de transport'**
+  String get mapsPlaceDetailsTransitMode;
+
+  /// No description provided for @mapsPlaceDetailsTransitStopType.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type d\'arrêt'**
+  String get mapsPlaceDetailsTransitStopType;
+
+  /// No description provided for @mapsPlaceDetailsTransitNetwork.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réseau'**
+  String get mapsPlaceDetailsTransitNetwork;
+
+  /// No description provided for @mapsPlaceDetailsAirportCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code aéroport'**
+  String get mapsPlaceDetailsAirportCode;
+
+  /// No description provided for @mapsPlaceDetailsLongitude.
+  ///
+  /// In fr, this message translates to:
+  /// **'Longitude'**
+  String get mapsPlaceDetailsLongitude;
+
+  /// No description provided for @mapsPlaceDetailsLatitude.
+  ///
+  /// In fr, this message translates to:
+  /// **'Latitude'**
+  String get mapsPlaceDetailsLatitude;
+
+  /// No description provided for @mapsSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher un lieu'**
+  String get mapsSearchHint;
+
+  /// No description provided for @mapsSearchEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun résultat Google Places pour cette recherche.'**
+  String get mapsSearchEmpty;
+
+  /// No description provided for @mapsSearchDisabledMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute GOOGLE_PLACES_API_KEY pour activer la recherche de lieux à bas coût.'**
+  String get mapsSearchDisabledMessage;
+
+  /// No description provided for @mapsSearchPoweredByGoogle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Powered by Google'**
+  String get mapsSearchPoweredByGoogle;
+
   /// No description provided for @resetPasswordTitle.
   ///
   /// In fr, this message translates to:

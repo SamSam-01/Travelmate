@@ -58,14 +58,13 @@ class _UserSearchPageState extends ConsumerState<UserSearchPage> {
     final actionsState = ref.watch(friendshipActionsProvider);
 
     final friendIds =
-        friendsAsync.valueOrNull?.map((profile) => profile.id).toSet() ??
-        <String>{};
+        friendsAsync.value?.map((profile) => profile.id).toSet() ?? <String>{};
     final incomingIds =
-        pendingRequestsAsync.valueOrNull
+        pendingRequestsAsync.value
             ?.map((request) => request.requester.id)
             .toSet() ??
         <String>{};
-    final outgoingIds = outgoingPendingAsync.valueOrNull ?? <String>{};
+    final outgoingIds = outgoingPendingAsync.value ?? <String>{};
 
     return Scaffold(
       appBar: AppBar(title: Text(localizations.friendsSearchTitle)),
@@ -95,7 +94,7 @@ class _UserSearchPageState extends ConsumerState<UserSearchPage> {
 
                         return ListView.separated(
                           itemCount: profiles.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: AppSpacing.md),
                           itemBuilder: (context, index) {
                             final profile = profiles[index];

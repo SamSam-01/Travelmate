@@ -20,7 +20,7 @@ class PlannedOutingService {
 
     final participantRows = await supabase
         .from('planned_outing_participants')
-        .select('planned_outing_id, profile_id');
+        .select('planned_outing_id, profile_id, status');
 
     final profileRows = await supabase.from('profiles').select('id, username');
 
@@ -103,6 +103,7 @@ class PlannedOutingService {
     for (final row in participantRows) {
       final outingId = (row['planned_outing_id'] ?? '').toString();
       final profileId = (row['profile_id'] ?? '').toString();
+      final status = (row['status'] ?? 'pending').toString();
       if (outingId.isEmpty || profileId.isEmpty) {
         continue;
       }
@@ -112,6 +113,7 @@ class PlannedOutingService {
         PlannedOutingUser(
           id: profileId,
           name: profileById[profileId] ?? profileId,
+          status: status,
         ),
       );
     }
@@ -183,6 +185,8 @@ class PlannedOutingService {
       return;
     }
 
+    final currentUserId = supabase.auth.currentUser?.id;
+
     await supabase
         .from('planned_outing_participants')
         .insert(
@@ -192,6 +196,7 @@ class PlannedOutingService {
                 (user) => {
                   'planned_outing_id': outingId,
                   'profile_id': user.id,
+                  'status': user.id == currentUserId ? 'accepted' : 'pending',
                 },
               )
               .toList(growable: false),
@@ -229,6 +234,18 @@ class PlannedOutingService {
     if (value is int) return value;
     if (value is double) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Future<void> updateParticipantStatus({
+    required String outingId,
+    required String userId,
+    required String status,
+  }) async {
+    await supabase
+        .from('planned_outing_participants')
+        .update({'status': status})
+        .eq('planned_outing_id', outingId)
+        .eq('profile_id', userId);
   }
 }
 
